@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>月光光心慌慌：暗影猎手 — 单人恐怖杀手战术卡牌原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-void: #070709;
+      --bg-panel: #101116;
+      --bg-card: #161821;
+      --accent-blood: #dc2626;
+      --accent-ember: #f97316;
+      --accent-evil: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-color: var(--bg-void);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(185, 28, 28, 0.14), transparent 36%),
+        radial-gradient(circle at 82% 85%, rgba(126, 34, 206, 0.12), transparent 42%),
+        linear-gradient(180deg, #070709 0%, #0b0c10 100%);
+      color: #f3f4f6;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .font-cinema {
+      font-family: 'Cinzel', Georgia, serif;
+    }
+
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* 恐怖屏幕震动与血光/闪光反馈 */
+    @keyframes screenShake {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      15% { transform: translate3d(-7px, 4px, 0); }
+      30% { transform: translate3d(7px, -5px, 0); }
+      45% { transform: translate3d(-5px, -3px, 0); }
+      60% { transform: translate3d(6px, 3px, 0); }
+      75% { transform: translate3d(-3px, 2px, 0); }
+    }
+
+    @keyframes pulseStalk {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45), inset 0 0 18px rgba(239, 68, 68, 0.16); }
+      50% { box-shadow: 0 0 22px 4px rgba(239, 68, 68, 0.75), inset 0 0 26px rgba(220, 38, 38, 0.3); }
+    }
+
+    @keyframes pureEvilAura {
+      0%, 100% { box-shadow: 0 0 24px rgba(168, 85, 247, 0.55), 0 0 48px rgba(220, 38, 38, 0.35); }
+      50% { box-shadow: 0 0 36px rgba(220, 38, 38, 0.8), 0 0 64px rgba(168, 85, 247, 0.5); }
+    }
+
+    @keyframes brokenJitter {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px) rotate(-1deg); }
+      75% { transform: translateX(2px) rotate(1deg); }
+    }
+
+    .shake-active {
+      animation: screenShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    .stalk-target-glow {
+      animation: pulseStalk 1.5s infinite;
+      border-color: rgba(248, 113, 113, 0.9) !important;
+    }
+
+    .pure-evil-glow {
+      animation: pureEvilAura 1.8s infinite;
+    }
+
+    .broken-resident {
+      animation: brokenJitter 0.45s infinite;
+    }
+
+    /* 黑暗房间遮罩与手电/月光质感 */
+    .room-dark {
+      background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.04) 0%, rgba(4, 5, 8, 0.94) 85%) !important;
+      border-color: rgba(99, 102, 241, 0.25) !important;
+    }
+
+    .room-lit {
+      background: radial-gradient(circle at 50% 25%, rgba(254, 240, 138, 0.06) 0%, rgba(20, 23, 33, 0.94) 85%);
+    }
+
+    /* 卡片悬浮与选中态 */
+    .killer-card {
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .killer-card:hover:not(.card-disabled) {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.85), 0 0 16px rgba(220, 38, 38, 0.28);
+    }
+
+    .killer-card.card-selected {
+      transform: translateY(-12px) scale(1.03);
+      border-color: #f97316 !important;
+      box-shadow: 0 16px 32px -4px rgba(249, 115, 22, 0.35), 0 0 0 2px rgba(249, 115, 22, 0.55);
+    }
+
+    /* 自定义滚动条 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 17, 24, 0.6);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(127, 29, 29, 0.65);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(220, 38, 38, 0.85);
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-red-700 selection:text-white">
+  <!-- 全屏血光 / 警报 / 闪光反馈层 -->
+  <div id="fxFlashOverlay" class="pointer-events-none fixed inset-0 z-50 opacity-0 transition-opacity duration-300"></div>
+
+  <!-- 游戏主容器 -->
+  <div id="appShell" class="min-h-screen w-full max-w-[1520px] mx-auto px-3 sm:px-5 py-3 sm:py-4 flex flex-col gap-3 sm:gap-4">
+
+    <!-- 顶部电影栏与核心状态仪表盘 -->
+    <header class="rounded-2xl bg-zinc-950/90 border border-zinc-800/90 px-4 py-3 shadow-2xl flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+      <!-- 左侧标题与角色/剧本切换器 -->
+      <div class="flex flex-wrap items-center justify-between sm:justify-start gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-red-600 animate-ping"></span>
+            <span class="text-[11px] uppercase tracking-[0.22em] text-red-400 font-semibold">Haddonfield Night Slasher</span>
+          </div>
+          <h1 class="font-cinema text-lg sm:text-xl md:text-2xl font-extrabold tracking-wide text-zinc-100">
+            暗影猎手 <span class="text-red-600">THE SHAPE</span>
+          </h1>
+        </div>
+
+        <!-- 杀手角色选择（预留 Ghostface 架构） -->
+        <div class="flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-800 p-1 rounded-xl">
+          <button id="btnSelectMyers" type="button" onclick="selectKiller('myers')"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-700 text-white shadow transition cursor-pointer">
+            🔪 迈尔斯 (已上线)
+          </button>
+          <button id="btnSelectGhostface" type="button" onclick="selectKiller('ghostface')"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 transition cursor-pointer"
+            title="模块化架构已预留鬼面（双凶手切换与夺命来电）">
+            🎭 鬼面 (架构预留)
+          </button>
+        </div>
+      </div>
+
+      <!-- 中央核心数值槽 -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 flex-1 max-w-4xl">
+        <!-- 回合 -->
+        <div class="rounded-xl bg-zinc-900/95 border border-zinc-800/90 px-3 py-2">
+          <div class="text-[11px] text-zinc-400 flex items-center justify-between">
+            <span>夜晚回合</span>
+            <span id="actBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800/50">Act I</span>
+          </div>
+          <div id="hudTurn" class="font-mono-num text-lg sm:text-xl font-bold text-zinc-100 mt-0.5">第 1 回合</div>
+        </div>
+
+        <!-- 行动力 AP -->
+        <div class="rounded-xl bg-zinc-900/95 border border-zinc-800/90 px-3 py-2">
+          <div class="text-[11px] text-zinc-400">行动力 (AP)</div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span id="hudAp" class="font-mono-num text-lg sm:text-xl font-bold text-amber-400">3 / 3</span>
+            <div id="apPips" class="flex gap-1"></div>
+          </div>
+        </div>
+
+        <!-- 恶念值 Evil (0-10) -->
+        <div id="evilHudBox" class="rounded-xl bg-zinc-900/95 border border-purple-900/60 px-3 py-2 transition">
+          <div class="text-[11px] text-purple-300 flex items-center justify-between">
+            <span>恶念值</span>
+            <span id="evilStateTag" class="text-[10px] text-purple-400">潜伏</span>
+          </div>
+          <div class="flex items-baseline justify-between mt-0.5">
+            <span id="hudEvil" class="font-mono-num text-lg sm:text-xl font-bold text-purple-300">0/10</span>
+            <span id="hudKills" class="font-mono-num text-xs text-zinc-400">击杀 0</span>
+          </div>
+          <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-1">
+            <div id="evilBar" class="h-full bg-gradient-to-r from-purple-600 to-red-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 警戒度 Alert (0-12) -->
+        <div id="alertHudBox" class="rounded-xl bg-zinc-900/95 border border-red-900/60 px-3 py-2 transition">
+          <div class="text-[11px] text-red-300 flex items-center justify-between">
+            <span>警方警戒</span>
+            <span id="alertMilestoneTag" class="text-[10px] text-red-400">安全</span>
+          </div>
+          <div class="flex items-baseline justify-between mt-0.5">
+            <span id="hudAlert" class="font-mono-num text-lg sm:text-xl font-bold text-red-400">0/12</span>
+            <span class="text-[10px] text-zinc-500">12包围</span>
+          </div>
+          <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-1">
+            <div id="alertBar" class="h-full bg-gradient-to-r from-amber-500 via-red-600 to-rose-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 猎杀得分 Score -->
+        <div class="col-span-2 sm:col-span-1 rounded-xl bg-zinc-900/95 border border-emerald-900/50 px-3 py-2">
+          <div class="text-[11px] text-emerald-300 flex items-center justify-between">
+            <span>恐怖片得分</span>
+            <span id="ratingBadge" class="text-[10px] px-1.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50">B级</span>
+          </div>
+          <div id="hudScore" class="font-mono-num text-lg sm:text-xl font-bold text-emerald-300 mt-0.5">0 分</div>
+        </div>
+      </div>
+
+      <!-- 右侧快捷操作与音效 -->
+      <div class="flex items-center justify-end gap-2">
+        <button id="btnSoundToggle" type="button" onclick="toggleSound()"
+          class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-medium text-zinc-200 transition cursor-pointer">
+          🔊 音效：开
+        </button>
+        <button type="button" onclick="startNewGame()"
+          class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-medium text-zinc-200 transition cursor-pointer">
+          🔄 重开一局
+        </button>
+        <button id="btnEndTurn" type="button" onclick="endPlayerTurn()"
+          class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-red-950/60 transition cursor-pointer">
+          ⏭️ 结束回合
+        </button>
+      </div>
+    </header>
+
+    <!-- 杀手状态横幅（觉醒 / 停电 / 选中卡牌提示） -->
+    <section id="bannerStrip" class="rounded-xl bg-zinc-900/85 border border-zinc-800/90 px-4 py-2.5 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs sm:text-sm">
+      <div class="flex flex-wrap items-center gap-2">
+        <span id="killerStatusPill" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-950 text-red-300 border border-red-700/60">
+          🔪 迈尔斯 · 阴影潜伏
+        </span>
+        <span id="phoneStatusPill" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+          ☎️ 电话线：完好
+        </span>
+        <span id="pureEvilPill" class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-950 text-purple-200 border border-purple-500 animate-pulse">
+          🔥 纯粹之恶激活：无视门锁/免疫伤害/普攻即处决
+        </span>
+      </div>
+      <div id="actionPromptText" class="text-amber-300/95 font-medium">
+        提示：点击相邻房间移动（1 AP），或点击下方手牌选择战术，再点击地图房间/目标释放。
+      </div>
+    </section>
+
+    <!-- 主战区：左侧 3x3 房屋庭院地图 + 右侧 猎物情报 & 恐怖日志 -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      <!-- 左侧 8 列：3x3 地图 -->
+      <section class="lg:col-span-8 rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3 sm:p-4 shadow-2xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h2 class="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
+              <span>🏠 哈登菲尔德大宅与庭院 (3×3 战术平面图)</span>
+            </h2>
+            <p class="text-[11px] sm:text-xs text-zinc-400">
+              红框虚线 = 迈尔斯当前【凝视线】可凝视房间；点击相邻房间移动（1 AP）；也可直接点击房间内【崩溃】居民发动基础刀击（1 AP）。
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-[11px]">
+            <span class="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300">🚪 出口：厨房 / 车库</span>
+            <span class="px-2 py-0.5 rounded bg-zinc-900 border border-amber-800/60 text-amber-300">🔒 已锁门</span>
+            <span class="px-2 py-0.5 rounded bg-zinc-900 border border-indigo-800/60 text-indigo-300">⚡ 停电黑暗</span>
+          </div>
+        </div>
+
+        <!-- 3x3 网格 -->
+        <div id="mapGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3"></div>
+      </section>
+
+      <!-- 右侧 4 列：居民与目标状态 + 实时战斗日志 -->
+      <aside class="lg:col-span-4 flex flex-col gap-3">
+        <!-- 居民与特殊目标概览 -->
+        <div class="rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3.5 shadow-xl">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-zinc-100">🎯 猎物与威胁名单</h3>
+            <span id="aliveCountLabel" class="text-xs font-mono-num text-zinc-400">存活: 6</span>
+          </div>
+          <div class="text-[11px] text-zinc-400 bg-zinc-900/80 border border-zinc-800/80 rounded-lg p-2 mb-2.5 leading-relaxed">
+            <strong class="text-zinc-200">恐慌法则：</strong>0~1 冷静（易反击）｜2 惊慌（向出口逃跑）｜≥3 或 锁门受阻/孤立死角 = <span class="text-red-400 font-semibold">【崩溃/待宰】</span>（攻击直接升级为<span class="text-amber-300 font-semibold">处决</span>！）。警戒 4 刷【持枪警察】，警戒 8 刷【Final Girl】。
+          </div>
+          <div id="residentRoster" class="max-h-56 overflow-y-auto pr-1 space-y-1.5"></div>
+        </div>
+
+        <!-- 电影与战术日志 -->
+        <div class="rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3.5 shadow-xl flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-zinc-100">📽️ 恐怖片实况日志</h3>
+            <button type="button" onclick="clearLog()" class="text-[11px] text-zinc-500 hover:text-zinc-300 cursor-pointer">清空</button>
+          </div>
+          <div id="combatLog" class="h-52 sm:h-60 overflow-y-auto pr-1 space-y-1.5 text-xs"></div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- 底部手牌区 -->
+    <section class="rounded-2xl bg-zinc-950/95 border border-zinc-800/90 p-3 sm:p-4 shadow-2xl">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm sm:text-base font-bold text-zinc-100">🃏 迈尔斯手牌区</h2>
+          <span id="deckStatsLabel" class="text-xs font-mono-num text-zinc-400">牌库: 10 | 弃牌: 0</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnStalkAction" type="button" onclick="performStalkAction()"
+            class="px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-600/60 text-purple-200 text-xs font-semibold transition cursor-pointer">
+            👁️ 凝视线 (1 AP, 每回合1次)
+          </button>
+          <button id="btnCancelCard" type="button" onclick="clearSelectedCard()"
+            class="hidden px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition cursor-pointer">
+            取消选牌
+          </button>
+        </div>
+      </div>
+
+      <div id="handContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3"></div>
+    </section>
+  </div>
+
+  <!-- 结算 / 结局弹窗 -->
+  <div id="endModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-zinc-950 border border-red-800/70 p-6 shadow-2xl text-center">
+      <div id="endModalTag" class="text-xs uppercase tracking-[0.2em] text-red-400 font-bold mb-1">NIGHT ENDED</div>
+      <h2 id="endModalTitle" class="font-cinema text-2xl font-extrabold text-zinc-100 mb-2">夜幕降临结算</h2>
+      <p id="endModalDesc" class="text-sm text-zinc-400 mb-4"></p>
+
+      <div class="grid grid-cols-3 gap-2 bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 mb-5">
+        <div>
+          <div class="text-[11px] text-zinc-400">最终得分</div>
+          <div id="endScore" class="font-mono-num text-lg font-bold text-emerald-400">0</div>
+        </div>
+        <div>
+          <div class="text-[11px] text-zinc-400">处决人数</div>
+          <div id="endKills" class="font-mono-num text-lg font-bold text-red-400">0</div>
+        </div>
+        <div>
+          <div class="text-[11px] text-zinc-400">电影评级</div>
+          <div id="endRating" class="font-mono-num text-lg font-bold text-amber-400">C</div>
+        </div>
+      </div>
+
+      <button type="button" onclick="startNewGame()"
+        class="w-full py-3 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-bold text-sm transition cursor-pointer">
+        🔪 再次开启猎杀之夜
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * 模块化架构说明：
+     * 1. KILLER_REGISTRY：杀手角色注册表。目前已完整实现迈尔斯（myers），
+     *    并预留了鬼面（ghostface）的配置结构（双凶手切换/夺命来电扩展点）。
+     * 2. CARD_TEMPLATES_MYERS：迈尔斯首发 15 张核心卡牌定义。
+     * 3. MAP_ROOMS_TEMPLATE：3x3 哈登菲尔德房屋与庭院地图（含连接边、出口、凝视线）。
+     * 4. SoundEngine：基于 Web Audio API 的纯合成恐怖音效（无需外部音频文件）。
+     * 5. GameState & Engine：完整单人战术回合循环、恐慌/崩溃/处决结算与 AI 自动机。
+     * ============================================================================
+     */
+
+    // --------------------------------------------------------------------------
+    // 1. 杀手角色注册表（支持未来扩展鬼面等角色）
+    // --------------------------------------------------------------------------
+    const KILLER_REGISTRY = {
+      myers: {
+        id: 'myers',
+        name: '迈克尔·迈尔斯 (The Shape)',
+        shortName: '迈尔斯',
+        icon: '🔪',
+        maxAp: 3,
+        maxEvil: 10,
+        pureEvilThreshold: 6,
+        themeColor: '#dc2626',
+        description: '沉默潜行、隔空凝视积攒恶念、封锁出口制造恐慌，恶念觉醒后无视门锁与反击。'
+      },
+      ghostface: {
+        id: 'ghostface',
+        name: '鬼面 / Ghostface（架构预留）',
+        shortName: '鬼面',
+        icon: '🎭',
+        maxAp: 3,
+        maxEvil: 10,
+        pureEvilThreshold: 6,
+        themeColor: '#e5e7eb',
+        ready: false,
+        description: '预留模块：双凶手点位切换（本体 + 共犯）、夺命来电诱导走位与前后夹击连招。'
+      }
+    };
+
+    // --------------------------------------------------------------------------
+    // 2. 迈尔斯 15 张首发核心卡牌
+    // targetType:
+    //   'self'     -> 点击任意房间/自身相关即可立即发动
+    //   'room'     -> 点击地图上的任意房间发动
+    //   'resident' -> 点击地图上包含居民的房间或目标居民发动
+    // --------------------------------------------------------------------------
+    const CARD_TEMPLATES_MYERS = [
+      {
+        id: 'street_mask',
+        name: '街角白面具',
+        cost: 1,
+        type: '凝视/控场',
+        targetType: 'self',
+        badgeColor: 'bg-purple-950 text-purple-300 border-purple-700/60',
+        desc: '处于【前院灌木】或【停电房间】时打出：+2 恶念，视野内所有居民 +1 恐慌。',
+        play: (state, ctx) => {
+          const curRoom = state.rooms[state.killerRoom];
+          if (state.killerRoom !== 'front_yard' && !curRoom.dark) {
+            return { ok: false, reason: '【街角白面具】需在【前院灌木】或【停电房间】中发动！' };
+          }
+          addEvil(state, 2);
+          const losRooms = getLineOfSightRooms(state, state.killerRoom);
+          let panickedCount = 0;
+          state.residents.forEach(r => {
+            if (r.alive && losRooms.includes(r.roomId)) {
+              inflictPanic(state, r, 1, '街角白面具凝视');
+              panickedCount++;
+            }
+          });
+          logEvent(`迈尔斯戴着白面具现身阴影，获得 +2 恶念，凝视线内 ${panickedCount} 名居民恐慌 +1！`, 'evil');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'cut_phone',
+        name: '割断电话线',
+        cost: 1,
+        type: '环境破坏',
+        targetType: 'self',
+        badgeColor: 'bg-amber-950 text-amber-300 border-amber-700/60',
+        desc: '本局电话线永久切断（居民无法通过抱团增加警戒度），当前房间居民 +1 恐慌。',
+        play: (state) => {
+          if (state.phoneCut) {
+            return { ok: false, reason: '电话线已经被割断了！' };
+          }
+          state.phoneCut = true;
+          const count = applyPanicToRoomResidents(state, state.killerRoom, 1, '电话线被剪断');
+          logEvent(`刺啦——电话线被割断！报警线路失效，当前房间 ${count} 名居民恐慌 +1。`, 'warn');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'main_breaker',
+        name: '拉下总电闸',
+        cost: 1,
+        type: '环境破坏',
+        targetType: 'room',
+        badgeColor: 'bg-indigo-950 text-indigo-300 border-indigo-700/60',
+        desc: '选择 1 个房间使其陷入【停电黑暗】持续 2 回合。黑暗中移动不消耗 AP 且居民无法反击。',
+        play: (state, ctx) => {
+          const room = state.rooms[ctx.roomId];
+          if (!room) return { ok: false, reason: '请选择一个目标房间。' };
+          room.dark = true;
+          room.darkTurns = 2;
+          const count = applyPanicToRoomResidents(state, room.id, 1, '突然停电');
+          logEvent(`【${room.name}】灯光熄灭陷入黑暗（2回合）！${count} 名居民受惊恐慌 +1。`, 'info');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'deadbolt_door',
+        name: '反锁逃生门',
+        cost: 1,
+        type: '封锁退路',
+        targetType: 'room',
+        badgeColor: 'bg-orange-950 text-orange-300 border-orange-700/60',
+        desc: '锁死所选房间的门/出口（持续 3 回合）。居民逃跑撞上锁死的门将直接【崩溃】！',
+        play: (state, ctx) => {
+          const room = state.rooms[ctx.roomId];
+          if (!room) return { ok: false, reason: '请选择一个房间进行反锁。' };
+          room.locked = true;
+          room.lockedTurns = 3;
+          logEvent(`咔哒！迈尔斯反锁了【${room.name}】的门锁（3回合），猎物的退路被切断！`, 'warn');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'relentless_pursuit',
+        name: '如影随形',
+        cost: 1,
+        type: '瞬移突袭',
+        targetType: 'resident',
+        badgeColor: 'bg-red-950 text-red-300 border-red-700/60',
+        desc: '消耗 2 恶念：无视距离瞬移到 1 名【惊慌】或【崩溃】居民所在房间（若该居民已崩溃则直接处决！）。',
+        play: (state, ctx) => {
+          if (state.evil < 2) {
+            return { ok: false, reason: '需要至少 2 点【恶念值】才能发动【如影随形】！' };
+          }
+          const target = ctx.resident;
+          if (!target || !target.alive) {
+            return { ok: false, reason: '请选择一名存活的居民作为追踪目标。' };
+          }
+          if (target.panic < 2 && !target.broken) {
+            return { ok: false, reason: '目标尚未进入【惊慌(恐慌≥2)】或【崩溃】状态，无法如影随形锁定！' };
+          }
+          state.evil -= 2;
+          moveKillerToRoom(state, target.roomId, true);
+          logEvent(`迈尔斯消耗 2 恶念，如幽灵般出现在【${state.rooms[target.roomId].name}】的【${target.name}】身后！`, 'evil');
+          if (target.broken) {
+            executeResident(state, target, '如影随形瞬杀', 3, 1);
+          }
+          return { ok: true };
+        }
+      },
+      {
+        id: 'closet_ambush',
+        name: '壁橱阴影',
+        cost: 1,
+        type: '伏击埋伏',
+        targetType: 'self',
+        badgeColor: 'bg-zinc-800 text-zinc-200 border-zinc-600',
+        desc: '在当前房间设下阴影伏击：当前房间居民 +2 恐慌；若房间内已有【崩溃】居民，立刻处决 1 人！',
+        play: (state) => {
+          const roomId = state.killerRoom;
+          applyPanicToRoomResidents(state, roomId, 2, '壁橱阴影突现');
+          const brokenVictim = state.residents.find(r => r.alive && r.roomId === roomId && r.broken);
+          if (brokenVictim) {
+            executeResident(state, brokenVictim, '壁橱伏击处决', 3, 1);
+          } else {
+            logEvent(`迈尔斯隐入【${state.rooms[roomId].name}】的阴影之中，静待猎物靠近。`, 'info');
+          }
+          return { ok: true };
+        }
+      },
+      {
+        id: 'head_tilt_stare',
+        name: '歪头凝视',
+        cost: 0,
+        type: '联动连招',
+        targetType: 'self',
+        badgeColor: 'bg-rose-950 text-rose-300 border-rose-700/60',
+        desc: '0费联动：抽 1 张牌；若本回合已有处决，额外抽 1 张牌并使当前/相邻房间居民 +2 恐慌。',
+        play: (state) => {
+          drawCards(state, 1);
+          if (state.killsThisTurn > 0) {
+            drawCards(state, 1);
+            const adj = getAdjacentRooms(state.killerRoom);
+            const targets = [state.killerRoom, ...adj];
+            let hit = 0;
+            state.residents.forEach(r => {
+              if (r.alive && targets.includes(r.roomId)) {
+                inflictPanic(state, r, 2, '歪头血腥凝视');
+                hit++;
+              }
+            });
+            logEvent(`迈尔斯歪着头注视血泊！额外抽 1 张牌，并令 ${hit} 名附近居民恐慌 +2！`, 'kill');
+          } else {
+            logEvent(`迈尔斯冷酷地歪头凝视，抽 1 张战术牌。`, 'info');
+          }
+          return { ok: true };
+        }
+      },
+      {
+        id: 'kitchen_knife_thrust',
+        name: '厨刀穿刺',
+        cost: 1,
+        type: '攻击/处决',
+        targetType: 'resident',
+        badgeColor: 'bg-red-950 text-red-200 border-red-600/70',
+        desc: '对同房间居民发动攻击：若目标【崩溃】或处于【孤立死角】则直接【处决】(+3分/+1恶念)；否则 +2 恐慌。',
+        play: (state, ctx) => {
+          const target = ctx.resident;
+          if (!target || !target.alive) return { ok: false, reason: '请选择一名目标居民。' };
+          if (target.roomId !== state.killerRoom) {
+            return { ok: false, reason: '【厨刀穿刺】必须对同房间的居民发动！' };
+          }
+          const isIsolated = countResidentsInRoom(state, target.roomId) === 1;
+          if (target.broken || isIsolated || state.pureEvilActive) {
+            const reason = state.pureEvilActive ? '纯粹之恶穿刺' : (target.broken ? '崩溃处决' : '孤立突袭处决');
+            executeResident(state, target, reason, 3, 1);
+          } else {
+            inflictPanic(state, target, 2, '厨刀逼近');
+            logEvent(`厨刀擦过【${target.name}】身侧，恐慌 +2！继续逼迫使其崩溃再处决！`, 'warn');
+          }
+          return { ok: true };
+        }
+      },
+      {
+        id: 'nailed_to_wall',
+        name: '钉死在墙上',
+        cost: 2,
+        type: '仪式处决',
+        targetType: 'resident',
+        badgeColor: 'bg-red-900/90 text-red-100 border-red-500',
+        desc: '对同房间【崩溃】居民打出：将其处决（+5分 / +2恶念），并在房间留下【恐怖惨状】使后续进入者恐慌 +2！',
+        play: (state, ctx) => {
+          const target = ctx.resident;
+          if (!target || !target.alive || target.roomId !== state.killerRoom) {
+            return { ok: false, reason: '请选择当前房间内的一名居民。' };
+          }
+          if (!target.broken && !state.pureEvilActive) {
+            return { ok: false, reason: '【钉死在墙上】需要目标处于【崩溃】状态（恐慌≥3）！' };
+          }
+          const room = state.rooms[target.roomId];
+          room.horrificScene = true;
+          executeResident(state, target, '仪式处决·钉死在墙上', 5, 2);
+          logEvent(`【${room.name}】留下了骇人的恐怖惨状，任何踏入此地的居民都将恐慌 +2！`, 'kill');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'shatter_window',
+        name: '破窗而入',
+        cost: 1,
+        type: '破窗突袭',
+        targetType: 'room',
+        badgeColor: 'bg-rose-950 text-rose-300 border-rose-700/60',
+        desc: '移动到相邻房间（若该房间有窗/门连通），房间内所有居民 +2 恐慌，并返还 1 AP（等于免费突入）！',
+        play: (state, ctx) => {
+          const roomId = ctx.roomId;
+          if (!getAdjacentRooms(state.killerRoom).includes(roomId)) {
+            return { ok: false, reason: '【破窗而入】只能突入相邻房间！' };
+          }
+          moveKillerToRoom(state, roomId, true);
+          const count = applyPanicToRoomResidents(state, roomId, 2, '玻璃粉碎破窗而入');
+          state.ap = Math.min(state.maxAp, state.ap + 1);
+          logEvent(`哗啦——玻璃粉碎！迈尔斯破窗突入【${state.rooms[roomId].name}】，${count} 名居民恐慌 +2，返还 1 AP！`, 'kill');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'silent_approach',
+        name: '无声逼近',
+        cost: 1,
+        type: '潜行走位',
+        targetType: 'room',
+        badgeColor: 'bg-teal-950 text-teal-300 border-teal-700/60',
+        desc: '移动到相邻房间且返还 1 AP（免费潜行一步），若目标房间有居民则使其恐慌 +1。',
+        play: (state, ctx) => {
+          const roomId = ctx.roomId;
+          if (!getAdjacentRooms(state.killerRoom).includes(roomId)) {
+            return { ok: false, reason: '请选择一个相邻房间进行无声潜行。' };
+          }
+          moveKillerToRoom(state, roomId, true);
+          const count = applyPanicToRoomResidents(state, roomId, 1, '无声逼近');
+          state.ap = Math.min(state.maxAp, state.ap + 1);
+          logEvent(`迈尔斯毫无脚步声地潜入【${state.rooms[roomId].name}】（返还 1 AP），${count} 名居民恐慌 +1。`, 'info');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'heavy_door_smash',
+        name: '重击破门',
+        cost: 1,
+        type: '破坏/恐吓',
+        targetType: 'room',
+        badgeColor: 'bg-amber-950 text-amber-200 border-amber-600/60',
+        desc: '重击目标房间：解除其门锁并震慑房间内所有居民恐慌 +2；若目标房间有【崩溃】居民，直接处决 1 人！',
+        play: (state, ctx) => {
+          const room = state.rooms[ctx.roomId];
+          if (!room) return { ok: false, reason: '请选择一个房间。' };
+          room.locked = false;
+          room.lockedTurns = 0;
+          applyPanicToRoomResidents(state, room.id, 2, '重击破门震慑');
+          const brokenVictim = state.residents.find(r => r.alive && r.roomId === room.id && r.broken);
+          if (brokenVictim) {
+            executeResident(state, brokenVictim, '破门狂暴处决', 3, 1);
+          } else {
+            logEvent(`轰！迈尔斯震开了【${room.name}】的门锁，房间内居民恐慌 +2！`, 'warn');
+          }
+          return { ok: true };
+        }
+      },
+      {
+        id: 'ignore_pain',
+        name: '无视痛觉',
+        cost: 0,
+        type: '恶念转化',
+        targetType: 'self',
+        badgeColor: 'bg-purple-950 text-purple-200 border-purple-500/70',
+        desc: '0费转化：+2 恶念值，并降低 1 点警方警戒度（若警戒＞0）。',
+        play: (state) => {
+          addEvil(state, 2);
+          if (state.alert > 0) {
+            state.alert = Math.max(0, state.alert - 1);
+          }
+          logEvent(`迈尔斯对疼痛与警笛毫无反应：恶念 +2，警方警戒 -1！`, 'evil');
+          return { ok: true };
+        }
+      },
+      {
+        id: 'bloody_harvest',
+        name: '血腥收割',
+        cost: 2,
+        type: '范围连斩',
+        targetType: 'self',
+        badgeColor: 'bg-red-950 text-red-100 border-red-500',
+        desc: '处决当前房间内【所有】处于【崩溃】状态的居民！每处决 1 人额外 +2 恶念与 +3 分。',
+        play: (state) => {
+          const victims = state.residents.filter(r => r.alive && r.roomId === state.killerRoom && r.broken);
+          if (victims.length === 0) {
+            return { ok: false, reason: '当前房间没有处于【崩溃】状态的居民可供血腥收割！' };
+          }
+          logEvent(`🩸 血腥收割启动！迈尔斯在【${state.rooms[state.killerRoom].name}】展开连环处决！`, 'kill');
+          victims.forEach(v => {
+            executeResident(state, v, '血腥连斩处决', 4, 2);
+          });
+          return { ok: true };
+        }
+      },
+      {
+        id: 'pure_evil_awakening',
+        name: '纯粹之恶（觉醒）',
+        cost: 2,
+        type: '终极形态',
+        targetType: 'self',
+        badgeColor: 'bg-gradient-to-r from-purple-950 to-red-950 text-amber-200 border-amber-400',
+        desc: '需【恶念 ≥ 6】才可发动：激活【纯粹之恶】状态（无视门锁、免疫反击、普攻直接处决），并 +2 分！',
+        play: (state) => {
+          if (state.evil < 6 && !state.pureEvilActive) {
+            return { ok: false, reason: '需要【恶念值 ≥ 6】才能觉醒【纯粹之恶】！' };
+          }
+          state.pureEvilActive = true;
+          state.score += 2;
+          triggerScreenFx('evil', true);
+          logEvent(`🔥 纯粹之恶降临！迈尔斯进入不可阻挡的终极杀戮形态，得分 +2！`, 'evil');
+          return { ok: true };
+        }
+      }
+    ];
+
+    // --------------------------------------------------------------------------
+    // 3. 3x3 哈登菲尔德房屋与庭院地图
+    // --------------------------------------------------------------------------
+    const MAP_ROOMS_TEMPLATE = [
+      { id: 'balcony', name: '阳台/屋顶', row: 0, col: 0, tag: '高处俯瞰', isExit: false, defaultDark: false },
+      { id: 'master_bed', name: '主卧（带窗）', row: 0, col: 1, tag: '临窗卧室', isExit: false, defaultDark: false },
+      { id: 'bathroom', name: '浴室', row: 0, col: 2, tag: '密闭空间', isExit: false, defaultDark: true },
+
+      { id: 'hallway', name: '走廊（枢纽）', row: 1, col: 0, tag: '中心走廊', isExit: false, defaultDark: false },
+      { id: 'living_room', name: '客厅（大窗）', row: 1, col: 1, tag: '临窗大厅', isExit: false, defaultDark: false },
+      { id: 'kitchen', name: '厨房', row: 1, col: 2, tag: '逃生出口', isExit: true, defaultDark: false },
+
+      { id: 'basement', name: '地下室', row: 2, col: 0, tag: '幽暗死角', isExit: false, defaultDark: true },
+      { id: 'front_yard', name: '前院灌木', row: 2, col: 1, tag: '阴影起点', isExit: false, defaultDark: true },
+      { id: 'garage', name: '车库', row: 2, col: 2, tag: '逃生出口', isExit: true, defaultDark: false }
+    ];
+
+    // --------------------------------------------------------------------------
+    // 4. Web Audio API 恐怖音效引擎（无需外部文件）
+    // --------------------------------------------------------------------------
+    const SoundEngine = {
+      enabled: true,
+      ctx: null,
+
+      ensureCtx() {
+        if (!this.enabled) return null;
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+        return this.ctx;
+      },
+
+      playTone(freq, endFreq, duration, type = 'sawtooth', gainVal = 0.08) {
+        const ctx = this.ensureCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration);
+
+        gain.gain.setValueAtTime(gainVal, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      },
+
+      step() {
+        this.playTone(110, 55, 0.09, 'triangle', 0.06);
+      },
+      stalk() {
+        this.playTone(440, 220, 0.35, 'sine', 0.07);
+        setTimeout(() => this.playTone(220, 146, 0.4, 'sine', 0.07), 160);
+      },
+      panic() {
+        this.playTone(620, 420, 0.14, 'square', 0.045);
+      },
+      slash() {
+        this.playTone(260, 48, 0.28, 'sawtooth', 0.12);
+        setTimeout(() => this.playTone(95, 35, 0.22, 'square', 0.09), 50);
+      },
+      powerCut() {
+        this.playTone(180, 32, 0.45, 'sawtooth', 0.09);
+      },
+      alarm() {
+        this.playTone(760, 520, 0.18, 'square', 0.05);
+        setTimeout(() => this.playTone(760, 520, 0.18, 'square', 0.05), 210);
+      }
+    };
+
+    // --------------------------------------------------------------------------
+    // 5. 全局游戏状态
+    // --------------------------------------------------------------------------
+    let gameState = null;
+
+    function createInitialResidents() {
+      return [
+        { id: 'r1', name: '劳丽·邻家少女', role: '普通居民', icon: '👧', roomId: 'living_room', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 },
+        { id: 'r2', name: '汤米·小男孩', role: '普通居民', icon: '👦', roomId: 'master_bed', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 },
+        { id: 'r3', name: '琳达·派对女孩', role: '普通居民', icon: '👱‍♀️', roomId: 'kitchen', panic: 0, broken: false, alive: true, armed: false, specialScore: 0 },
+        { id: 'r4', name: '鲍勃·机械学徒', role: '普通居民', icon: '🧑', roomId: 'garage', panic: 0, broken: false, alive: true, armed: false, specialScore: 0 },
+        { id: 'r5', name: '安妮·好奇学生', role: '普通居民', icon: '👩', roomId: 'bathroom', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 },
+        { id: 'r6', name: '老管家·看守人', role: '普通居民', icon: '🧓', roomId: 'basement', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 }
+      ];
+    }
+
+    function startNewGame() {
+      document.getElementById('endModal').classList.add('hidden');
+      const rooms = {};
+      MAP_ROOMS_TEMPLATE.forEach(r => {
+        rooms[r.id] = {
+          ...r,
+          dark: r.defaultDark,
+          darkTurns: r.defaultDark ? 99 : 0,
+          locked: false,
+          lockedTurns: 0,
+          horrificScene: false
+        };
+      });
+
+      const shuffledDeck = shuffleArray(CARD_TEMPLATES_MYERS.map((c, idx) => ({ ...c, uid: `${c.id}_${idx}_${Math.random().toString(36).slice(2, 6)}` })));
+
+      gameState = {
+        killerId: 'myers',
+        turn: 1,
+        maxAp: 3,
+        ap: 3,
+        evil: 0,
+        alert: 0,
+        score: 0,
+        kills: 0,
+        killsThisTurn: 0,
+        stalkUsedThisTurn: false,
+        pureEvilActive: false,
+        phoneCut: false,
+        copSpawned: false,
+        finalGirlSpawned: false,
+        gameOver: false,
+        killerRoom: 'front_yard',
+        rooms,
+        residents: createInitialResidents(),
+        deck: shuffledDeck,
+        hand: [],
+        discard: [],
+        selectedCardUid: null
+      };
+
+      drawCards(gameState, 5);
+      clearLog();
+      logEvent('🌙 哈登菲尔德的夜晚降临。迈尔斯潜伏在【前院灌木】的阴影中，狩猎开始！', 'evil');
+      renderAll();
+    }
+
+    // --------------------------------------------------------------------------
+    // 6. 地图、凝视线与辅助规则函数
+    // --------------------------------------------------------------------------
+    function getAdjacentRooms(roomId) {
+      const origin = gameState.rooms[roomId];
+      if (!origin) return [];
+      return Object.values(gameState.rooms)
+        .filter(r => Math.abs(r.row - origin.row) + Math.abs(r.col - origin.col) === 1)
+        .map(r => r.id);
+    }
+
+    /**
+     * 迈尔斯凝视线（Line of Sight）：
+     * - 从【前院灌木】可凝视同列上方房间（客厅、主卧）及相邻房间
+     * - 从【走廊】可凝视整行与整列房间
+     * - 其他房间可凝视相邻房间
+     */
+    function getLineOfSightRooms(state, roomId) {
+      const origin = state.rooms[roomId];
+      if (!origin) return [];
+      const set = new Set(getAdjacentRooms(roomId));
+      set.add(roomId);
+
+      if (roomId === 'front_yard') {
+        Object.values(state.rooms).forEach(r => {
+          if (r.col === origin.col) set.add(r.id);
+        });
+      } else if (roomId === 'hallway') {
+        Object.values(state.rooms).forEach(r => {
+          if (r.row === origin.row || r.col === origin.col) set.add(r.id);
+        });
+      }
+      return Array.from(set);
+    }
+
+    function countResidentsInRoom(state, roomId) {
+      return state.residents.filter(r => r.alive && r.roomId === roomId).length;
+    }
+
+    function addEvil(state, amount) {
+      const killerCfg = KILLER_REGISTRY[state.killerId];
+      const prev = state.evil;
+      state.evil = Math.max(0, Math.min(killerCfg.maxEvil, state.evil + amount));
+      if (prev < killerCfg.pureEvilThreshold && state.evil >= killerCfg.pureEvilThreshold) {
+        logEvent(`⚡ 恶念值突破 ${killerCfg.pureEvilThreshold} 点！迈尔斯已具备激活【纯粹之恶】的潜能！`, 'evil');
+      }
+    }
+
+    function inflictPanic(state, resident, amount, sourceText = '') {
+      if (!resident || !resident.alive) return;
+      resident.panic = Math.max(0, resident.panic + amount);
+      const room = state.rooms[resident.roomId];
+      if (room && room.horrificScene && amount > 0) {
+        resident.panic += 1;
+      }
+      if (resident.panic >= 3 && !resident.broken) {
+        resident.broken = true;
+        SoundEngine.panic();
+        logEvent(`💥 【${resident.name}】精神彻底崩溃，陷入【待宰】状态！`, 'warn');
+      }
+    }
+
+    function applyPanicToRoomResidents(state, roomId, amount, sourceText) {
+      let affected = 0;
+      state.residents.forEach(r => {
+        if (r.alive && r.roomId === roomId) {
+          inflictPanic(state, r, amount, sourceText);
+          affected++;
+        }
+      });
+      if (affected > 0) SoundEngine.panic();
+      return affected;
+    }
+
+    function moveKillerToRoom(state, targetRoomId, freeMove = false) {
+      const room = state.rooms[targetRoomId];
+      if (!room) return false;
+      if (room.locked && !state.pureEvilActive) {
+        logEvent(`🔒 【${room.name}】的门锁死了！需要【重击破门】或【纯粹之恶】才能强行进入。`, 'warn');
+        return false;
+      }
+
+      if (!freeMove) {
+        const moveCost = (room.dark || state.pureEvilActive) ? 0 : 1;
+        if (state.ap < moveCost) {
+          logEvent('行动力 (AP) 不足，无法移动！', 'warn');
+          return false;
+        }
+        state.ap -= moveCost;
+      }
+
+      state.killerRoom = targetRoomId;
+      SoundEngine.step();
+
+      // 迈尔斯进入房间时，若房间有【崩溃】居民，令其更加绝望
+      const brokenCount = state.residents.filter(r => r.alive && r.roomId === targetRoomId && r.broken).length;
+      if (brokenCount > 0) {
+        logEvent(`迈尔斯踏入【${room.name}】，崩溃的猎物发不出任何声音！`, 'kill');
+      } else {
+        logEvent(`迈尔斯移动至【${room.name}】${room.dark ? '（黑暗掩护）' : ''}。`, 'info');
+      }
+      return true;
+    }
+
+    function executeResident(state, resident, methodText, basePoints = 3, evilGain = 1) {
+      if (!resident || !resident.alive) return;
+      resident.alive = false;
+      state.kills += 1;
+      state.killsThisTurn += 1;
+
+      const bonus = resident.specialScore || 0;
+      const totalPts = basePoints + bonus;
+      state.score += totalPts;
+      addEvil(state, evilGain);
+
+      SoundEngine.slash();
+      triggerScreenFx('blood', true);
+      logEvent(`🔪 【处决】${resident.name} 死于【${methodText}】！获得 +${totalPts} 分，恶念 +${evilGain}！`, 'kill');
+      checkEndConditions(state);
+    }
+    // --------------------------------------------------------------------------
+    // 7. 玩家行动：凝视线、点击房间/居民、打出卡牌
+    // --------------------------------------------------------------------------
+    function performStalkAction() {
+      if (gameState.gameOver) return;
+      if (gameState.stalkUsedThisTurn) {
+        logEvent('本回合已经使用过【凝视线】了！', 'warn');
+        return;
+      }
+      if (gameState.ap < 1) {
+        logEvent('行动力 (AP) 不足，无法发动【凝视线】！', 'warn');
+        return;
+      }
+
+      const losRooms = getLineOfSightRooms(gameState, gameState.killerRoom);
+      const targets = gameState.residents.filter(r => r.alive && losRooms.includes(r.roomId));
+      if (targets.length === 0) {
+        logEvent('当前【凝视线】内没有任何可见的居民，换个角度或等猎物走入视野吧。', 'warn');
+        return;
+      }
+
+      gameState.ap -= 1;
+      gameState.stalkUsedThisTurn = true;
+      addEvil(gameState, 2);
+      targets.forEach(t => inflictPanic(gameState, t, 1, '暗影凝视'));
+      SoundEngine.stalk();
+      triggerScreenFx('stalk', false);
+      logEvent(`👁️ 迈尔斯锁定了凝视线内的 ${targets.length} 名居民！恶念 +2，目标恐慌 +1！`, 'evil');
+      renderAll();
+    }
+
+    function selectCard(cardUid) {
+      if (gameState.gameOver) return;
+      if (gameState.selectedCardUid === cardUid) {
+        gameState.selectedCardUid = null;
+        renderAll();
+        return;
+      }
+      const card = gameState.hand.find(c => c.uid === cardUid);
+      if (!card) return;
+      if (gameState.ap < card.cost) {
+        logEvent(`【${card.name}】需要 ${card.cost} AP，当前行动力不足！`, 'warn');
+        return;
+      }
+
+      // 若是 self 类型卡牌，点击即直接释放
+      if (card.targetType === 'self') {
+        playSelectedCard(cardUid, {});
+        return;
+      }
+
+      gameState.selectedCardUid = cardUid;
+      logEvent(`已选中【${card.name}】，请点击地图上的目标房间或居民释放。`, 'info');
+      renderAll();
+    }
+
+    function clearSelectedCard() {
+      gameState.selectedCardUid = null;
+      renderAll();
+    }
+
+    function playSelectedCard(cardUid, ctx) {
+      const idx = gameState.hand.findIndex(c => c.uid === cardUid);
+      if (idx === -1) return;
+      const card = gameState.hand[idx];
+
+      if (gameState.ap < card.cost) {
+        logEvent(`行动力不足，无法打出【${card.name}】。`, 'warn');
+        return;
+      }
+
+      const res = card.play(gameState, ctx);
+      if (!res || !res.ok) {
+        logEvent(res?.reason || `无法打出【${card.name}】。`, 'warn');
+        return;
+      }
+
+      gameState.ap -= card.cost;
+      gameState.hand.splice(idx, 1);
+      gameState.discard.push(card);
+      gameState.selectedCardUid = null;
+      renderAll();
+    }
+
+    function handleRoomClick(roomId) {
+      if (gameState.gameOver) return;
+
+      // 1. 若当前选中了需要目标的卡牌
+      if (gameState.selectedCardUid) {
+        const card = gameState.hand.find(c => c.uid === gameState.selectedCardUid);
+        if (card) {
+          if (card.targetType === 'room') {
+            playSelectedCard(card.uid, { roomId });
+            return;
+          }
+          if (card.targetType === 'resident') {
+            const residentInRoom = gameState.residents.find(r => r.alive && r.roomId === roomId);
+            if (!residentInRoom) {
+              logEvent(`【${gameState.rooms[roomId].name}】里没有存活的居民，请选择有居民的房间。`, 'warn');
+              return;
+            }
+            playSelectedCard(card.uid, { resident: residentInRoom, roomId });
+            return;
+          }
+        }
+      }
+
+      // 2. 若点击的是当前所在房间，且房间内有【崩溃】居民，可花费 1 AP 发动基础刀击处决
+      if (roomId === gameState.killerRoom) {
+        const brokenTarget = gameState.residents.find(r => r.alive && r.roomId === roomId && r.broken);
+        if (brokenTarget) {
+          if (gameState.ap < 1) {
+            logEvent('需要 1 AP 才能对【崩溃】居民发动处决！', 'warn');
+            return;
+          }
+          gameState.ap -= 1;
+          executeResident(gameState, brokenTarget, '阴影近身处决', 3, 1);
+          renderAll();
+          return;
+        }
+      }
+
+      // 3. 否则尝试向相邻房间移动
+      if (getAdjacentRooms(gameState.killerRoom).includes(roomId)) {
+        moveKillerToRoom(gameState, roomId, false);
+        renderAll();
+      } else {
+        logEvent(`【${gameState.rooms[roomId].name}】与当前位置不相邻，请点击相邻房间移动或使用瞬移/破窗卡牌。`, 'warn');
+      }
+    }
+
+    function handleResidentDirectClick(event, residentId) {
+      event.stopPropagation();
+      if (gameState.gameOver) return;
+      const resident = gameState.residents.find(r => r.id === residentId && r.alive);
+      if (!resident) return;
+
+      if (gameState.selectedCardUid) {
+        const card = gameState.hand.find(c => c.uid === gameState.selectedCardUid);
+        if (card && card.targetType === 'resident') {
+          playSelectedCard(card.uid, { resident, roomId: resident.roomId });
+          return;
+        }
+      }
+
+      // 同房间且目标已崩溃：直接 1 AP 处决
+      if (resident.roomId === gameState.killerRoom && resident.broken) {
+        if (gameState.ap < 1) {
+          logEvent('需要 1 AP 才能发动处决！', 'warn');
+          return;
+        }
+        gameState.ap -= 1;
+        executeResident(gameState, resident, '近身处决', 3, 1);
+        renderAll();
+        return;
+      }
+
+      // 同房间但目标未崩溃（冷静/惊慌）：1 AP 逼迫/威慑（+1 恐慌；若目标在【前院/黑暗】且非武装，可造成恐慌）
+      if (resident.roomId === gameState.killerRoom) {
+        if (gameState.ap < 1) {
+          logEvent('需要 1 AP 才能威慑居民！', 'warn');
+          return;
+        }
+        gameState.ap -= 1;
+        if (resident.role === '持枪警察' && !gameState.rooms[resident.roomId].dark && !gameState.pureEvilActive) {
+          gameState.alert = Math.min(12, gameState.alert + 2);
+          SoundEngine.alarm();
+          triggerScreenFx('alert', true);
+          logEvent(`🚨 【持枪警察】在光亮处正面开火！迈尔斯被压制，警方警戒 +2！`, 'alert');
+        } else {
+          inflictPanic(gameState, resident, 1, '迈尔斯逼近威慑');
+          SoundEngine.panic();
+          logEvent(`迈尔斯逼近【${resident.name}】，目标恐慌 +1（当前 ${resident.panic}）！`, 'warn');
+        }
+        renderAll();
+        return;
+      }
+
+      // 不在同房间，则引导点击其所在房间
+      handleRoomClick(resident.roomId);
+    }
+
+    // --------------------------------------------------------------------------
+    // 8. 结束回合：居民自动机、警戒推进、增援刷新与结算
+    // --------------------------------------------------------------------------
+    function endPlayerTurn() {
+      if (gameState.gameOver) return;
+      gameState.selectedCardUid = null;
+
+      // A. 抱团判定（同房间 ≥ 3 名普通居民，壮胆 -1 恐慌；若电话未断则 +1 警戒）
+      const roomGroups = {};
+      gameState.residents.forEach(r => {
+        if (!r.alive || r.role !== '普通居民') return;
+        roomGroups[r.roomId] = roomGroups[r.roomId] || [];
+        roomGroups[r.roomId].push(r);
+      });
+
+      Object.entries(roomGroups).forEach(([rId, list]) => {
+        if (list.length >= 3) {
+          list.forEach(r => {
+            r.panic = Math.max(0, r.panic - 1);
+            if (r.panic < 3) r.broken = false;
+          });
+          if (!gameState.phoneCut) {
+            gameState.alert = Math.min(12, gameState.alert + 1);
+            logEvent(`📞 【${gameState.rooms[rId].name}】多人抱团互相壮胆并拨打电话，警方警戒 +1！`, 'alert');
+          } else {
+            logEvent(`【${gameState.rooms[rId].name}】3人抱团壮胆（恐慌 -1），但电话线已断无法报警。`, 'info');
+          }
+        }
+      });
+
+      // B. 居民与特殊威胁行动（逃跑 / 搜捕）
+      const exitRooms = Object.values(gameState.rooms).filter(r => r.isExit);
+      gameState.residents.forEach(r => {
+        if (!r.alive) return;
+
+        // 持枪警察主动向迈尔斯所在房间搜捕
+        if (r.role === '持枪警察') {
+          const nextStep = pickStepTowardRoom(r.roomId, gameState.killerRoom);
+          if (nextStep) {
+            r.roomId = nextStep;
+            if (r.roomId === gameState.killerRoom && !gameState.rooms[r.roomId].dark && !gameState.pureEvilActive) {
+              gameState.alert = Math.min(12, gameState.alert + 1);
+              logEvent(`🚓 【持枪警察】巡逻至【${gameState.rooms[r.roomId].name}】，警戒 +1！`, 'alert');
+            }
+          }
+          return;
+        }
+
+        // 恐慌 ≥ 2 的居民试图向最近出口逃跑
+        if (r.panic >= 2 || r.broken) {
+          const targetExit = exitRooms[0];
+          const nextRoomId = pickStepTowardRoom(r.roomId, targetExit.id);
+          if (nextRoomId) {
+            const nextRoom = gameState.rooms[nextRoomId];
+            if (nextRoom.locked) {
+              // 撞上锁死的门，恐慌暴增并直接崩溃！
+              r.panic += 2;
+              r.broken = true;
+              SoundEngine.panic();
+              logEvent(`🔒 【${r.name}】惊慌逃向【${nextRoom.name}】却发现门被反锁，绝望之下直接【崩溃】！`, 'kill');
+            } else {
+              r.roomId = nextRoomId;
+              // 若到达出口且门未锁，尝试逃脱
+              if (nextRoom.isExit && !nextRoom.locked) {
+                r.alive = false;
+                gameState.alert = Math.min(12, gameState.alert + 2);
+                SoundEngine.alarm();
+                triggerScreenFx('alert', true);
+                logEvent(`🏃 【${r.name}】从【${nextRoom.name}】逃出生天并报信！警方警戒 +2！`, 'alert');
+              }
+            }
+          }
+        }
+      });
+
+      // C. 回合结束环境与警戒推进
+      Object.values(gameState.rooms).forEach(room => {
+        if (room.dark && room.darkTurns < 50) {
+          room.darkTurns -= 1;
+          if (room.darkTurns <= 0) {
+            room.dark = false;
+            room.darkTurns = 0;
+          }
+        }
+        if (room.locked) {
+          room.lockedTurns -= 1;
+          if (room.lockedTurns <= 0) {
+            room.locked = false;
+            room.lockedTurns = 0;
+          }
+        }
+      });
+
+      gameState.alert = Math.min(12, gameState.alert + 1);
+      logEvent(`⏱️ 第 ${gameState.turn} 回合结束，警方警戒上升至 ${gameState.alert}/12。`, 'info');
+
+      // 警戒 4 刷【持枪警察】，警戒 8 刷【Final Girl】
+      if (gameState.alert >= 4 && !gameState.copSpawned) {
+        gameState.copSpawned = true;
+        gameState.residents.push({
+          id: 'cop_1',
+          name: '布拉克特警长',
+          role: '持枪警察',
+          icon: '👮‍♂️',
+          roomId: 'living_room',
+          panic: 0,
+          broken: false,
+          alive: true,
+          armed: true,
+          specialScore: 4
+        });
+        SoundEngine.alarm();
+        triggerScreenFx('alert', true);
+        logEvent(`🚨 警报升级！武装警察【布拉克特警长】抵达【客厅】（击杀额外 +4 分）！`, 'alert');
+      }
+
+      if (gameState.alert >= 8 && !gameState.finalGirlSpawned) {
+        gameState.finalGirlSpawned = true;
+        gameState.residents.push({
+          id: 'final_girl',
+          name: '最终幸存者 (Final Girl)',
+          role: '核心主角',
+          icon: '🔥',
+          roomId: 'balcony',
+          panic: 1,
+          broken: false,
+          alive: true,
+          armed: false,
+          specialScore: 8
+        });
+        SoundEngine.alarm();
+        triggerScreenFx('stalk', true);
+        logEvent(`⭐ 电影高潮！【Final Girl】现身【阳台/屋顶】！处决她可获得额外 +8 分！`, 'evil');
+      }
+
+      if (checkEndConditions(gameState)) {
+        renderAll();
+        return;
+      }
+
+      // D. 推进至下一回合并重置 AP / 抽牌
+      gameState.turn += 1;
+      gameState.ap = gameState.maxAp;
+      gameState.killsThisTurn = 0;
+      gameState.stalkUsedThisTurn = false;
+      drawCards(gameState, 5 - gameState.hand.length);
+
+      renderAll();
+    }
+
+    function pickStepTowardRoom(fromId, goalId) {
+      if (fromId === goalId) return null;
+      const adj = getAdjacentRooms(fromId);
+      if (adj.length === 0) return null;
+      const goal = gameState.rooms[goalId];
+      let best = adj[0];
+      let bestDist = Infinity;
+      adj.forEach(id => {
+        const r = gameState.rooms[id];
+        const dist = Math.abs(r.row - goal.row) + Math.abs(r.col - goal.col);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = id;
+        }
+      });
+      return best;
+    }
+
+    function checkEndConditions(state) {
+      const aliveResidents = state.residents.filter(r => r.alive);
+      if (aliveResidents.length === 0) {
+        openEndModal('全灭收场！哈登菲尔德陷入死寂', '所有猎物与威胁均已被你清除，这是一场教科书般的恐怖片屠杀！', true);
+        return true;
+      }
+      if (state.alert >= 12) {
+        openEndModal('警方彻底包围现场', '警笛声响彻整条街道，包围网已合拢，本夜猎杀到此结束。', false);
+        return true;
+      }
+      return false;
+    }
+
+    function openEndModal(title, desc, isVictory) {
+      gameState.gameOver = true;
+      const rating = computeRating(gameState.score);
+      document.getElementById('endModalTag').textContent = isVictory ? 'SLASH VICTORY' : 'PERIMETER BREACHED';
+      document.getElementById('endModalTitle').textContent = title;
+      document.getElementById('endModalDesc').textContent = desc;
+      document.getElementById('endScore').textContent = `${gameState.score} 分`;
+      document.getElementById('endKills').textContent = `${gameState.kills} 人`;
+      document.getElementById('endRating').textContent = rating;
+      document.getElementById('endModal').classList.remove('hidden');
+    }
+
+    function computeRating(score) {
+      if (score >= 28) return 'S 级邪典';
+      if (score >= 20) return 'A 级惊悚';
+      if (score >= 12) return 'B 级悬疑';
+      return 'C 级热身';
+    }
+
+    // --------------------------------------------------------------------------
+    // 9. 抽牌、洗牌与角色切换
+    // --------------------------------------------------------------------------
+    function drawCards(state, count) {
+      for (let i = 0; i < count; i++) {
+        if (state.hand.length >= 6) break;
+        if (state.deck.length === 0) {
+          if (state.discard.length === 0) break;
+          state.deck = shuffleArray([...state.discard]);
+          state.discard = [];
+          logEvent('♻️ 弃牌堆已重新洗混为新的杀手牌库。', 'info');
+        }
+        const card = state.deck.pop();
+        if (card) state.hand.push(card);
+      }
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function selectKiller(killerId) {
+      if (killerId === 'ghostface') {
+        SoundEngine.stalk();
+        logEvent('🎭 【鬼面 / Ghostface】模块化架构已预留：当前原型已完整实装迈尔斯（15张专属牌 + 凝视线 + 恶念觉醒），后续可直接接入双凶手切换与夺命来电卡组！', 'evil');
+        renderAll();
+        return;
+      }
+      if (gameState.killerId !== 'myers') {
+        startNewGame();
+      }
+    }
+
+    function toggleSound() {
+      SoundEngine.enabled = !SoundEngine.enabled;
+      document.getElementById('btnSoundToggle').textContent = SoundEngine.enabled ? '🔊 音效：开' : '🔇 音效：关';
+      if (SoundEngine.enabled) SoundEngine.step();
+    }
+
+    // --------------------------------------------------------------------------
+    // 10. 视觉特效与 UI 渲染
+    // --------------------------------------------------------------------------
+    function triggerScreenFx(kind, shake = false) {
+      const overlay = document.getElementById('fxFlashOverlay');
+      const shell = document.getElementById('appShell');
+
+      if (kind === 'blood') {
+        overlay.style.background = 'radial-gradient(circle, rgba(220,38,38,0.28) 0%, rgba(127,29,29,0.52) 100%)';
+      } else if (kind === 'alert') {
+        overlay.style.background = 'radial-gradient(circle, rgba(59,130,246,0.16) 0%, rgba(220,38,38,0.34) 100%)';
+      } else {
+        overlay.style.background = 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, rgba(88,28,135,0.35) 100%)';
+      }
+
+      overlay.style.opacity = '1';
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+      }, 260);
+
+      if (shake) {
+        shell.classList.remove('shake-active');
+        void shell.offsetWidth;
+        shell.classList.add('shake-active');
+        setTimeout(() => shell.classList.remove('shake-active'), 400);
+      }
+    }
+
+    function logEvent(message, tone = 'info') {
+      const logBox = document.getElementById('combatLog');
+      if (!logBox) return;
+      const toneMap = {
+        info: 'text-zinc-300 border-zinc-800 bg-zinc-900/60',
+        warn: 'text-amber-200 border-amber-900/50 bg-amber-950/30',
+        kill: 'text-red-200 border-red-800/70 bg-red-950/45 font-medium',
+        evil: 'text-purple-200 border-purple-800/60 bg-purple-950/35',
+        alert: 'text-sky-200 border-sky-800/60 bg-sky-950/35'
+      };
+      const entry = document.createElement('div');
+      entry.className = `rounded-lg border px-2.5 py-1.5 leading-snug ${toneMap[tone] || toneMap.info}`;
+      entry.innerHTML = `<span class="font-mono-num text-[10px] text-zinc-500 mr-1.5">[T${gameState ? gameState.turn : 1}]</span>${message}`;
+      logBox.prepend(entry);
+    }
+
+    function clearLog() {
+      const logBox = document.getElementById('combatLog');
+      if (logBox) logBox.innerHTML = '';
+    }
+
+    function renderAll() {
+      renderHud();
+      renderMap();
+      renderRoster();
+      renderHand();
+    }
+
+    function renderHud() {
+      const s = gameState;
+      const killerCfg = KILLER_REGISTRY[s.killerId];
+      const actText = s.turn <= 3 ? 'Act I · 潜入' : (s.turn <= 6 ? 'Act II · 惊恐' : 'Finale · 终章');
+
+      document.getElementById('hudTurn').textContent = `第 ${s.turn} 回合`;
+      document.getElementById('actBadge').textContent = actText;
+      document.getElementById('hudAp').textContent = `${s.ap} / ${s.maxAp}`;
+
+      const pipsEl = document.getElementById('apPips');
+      pipsEl.innerHTML = '';
+      for (let i = 0; i < s.maxAp; i++) {
+        const pip = document.createElement('span');
+        pip.className = `h-2.5 w-2.5 rounded-full ${i < s.ap ? 'bg-amber-400 shadow-sm shadow-amber-400/70' : 'bg-zinc-700'}`;
+        pipsEl.appendChild(pip);
+      }
+
+      document.getElementById('hudEvil').textContent = `${s.evil}/${killerCfg.maxEvil}`;
+      document.getElementById('hudKills').textContent = `击杀 ${s.kills}`;
+      document.getElementById('evilBar').style.width = `${(s.evil / killerCfg.maxEvil) * 100}%`;
+      document.getElementById('evilStateTag').textContent = s.evil >= killerCfg.pureEvilThreshold ? '可觉醒' : '潜伏';
+
+      document.getElementById('hudAlert').textContent = `${s.alert}/12`;
+      document.getElementById('alertBar').style.width = `${(s.alert / 12) * 100}%`;
+      document.getElementById('alertMilestoneTag').textContent =
+        s.alert >= 8 ? 'Final Girl!' : (s.alert >= 4 ? '警力介入' : '安全');
+
+      document.getElementById('hudScore').textContent = `${s.score} 分`;
+      document.getElementById('ratingBadge').textContent = computeRating(s.score);
+
+      document.getElementById('phoneStatusPill').textContent = s.phoneCut ? '✂️ 电话线：已切断' : '☎️ 电话线：完好';
+      document.getElementById('phoneStatusPill').className = s.phoneCut
+        ? 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/60'
+        : 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700';
+
+      const purePill = document.getElementById('pureEvilPill');
+      if (s.pureEvilActive) {
+        purePill.classList.remove('hidden');
+        document.getElementById('evilHudBox').classList.add('pure-evil-glow');
+      } else {
+        purePill.classList.add('hidden');
+        document.getElementById('evilHudBox').classList.remove('pure-evil-glow');
+      }
+
+      const selectedCard = s.hand.find(c => c.uid === s.selectedCardUid);
+      document.getElementById('btnCancelCard').classList.toggle('hidden', !selectedCard);
+
+      if (selectedCard) {
+        document.getElementById('actionPromptText').textContent =
+          `正在准备打出【${selectedCard.name}】(${selectedCard.cost} AP)：请点击地图上对应的房间或居民。`;
+      } else {
+        document.getElementById('actionPromptText').textContent =
+          '提示：点击相邻房间移动（1 AP）；对【崩溃】居民点击可直接处决（1 AP）；或选牌制造恐慌与封锁。';
+      }
+    }
+
+    function renderMap() {
+      const s = gameState;
+      const grid = document.getElementById('mapGrid');
+      grid.innerHTML = '';
+
+      const adjIds = getAdjacentRooms(s.killerRoom);
+      const losIds = getLineOfSightRooms(s, s.killerRoom);
+      const selectedCard = s.hand.find(c => c.uid === s.selectedCardUid);
+
+      const orderedRooms = [...MAP_ROOMS_TEMPLATE].sort((a, b) => (a.row - b.row) || (a.col - b.col));
+
+      orderedRooms.forEach(tmpl => {
+        const room = s.rooms[tmpl.id];
+        const isKillerHere = s.killerRoom === room.id;
+        const isAdj = adjIds.includes(room.id);
+        const inLos = losIds.includes(room.id);
+        const roomResidents = s.residents.filter(r => r.alive && r.roomId === room.id);
+
+        let extraClasses = room.dark ? 'room-dark' : 'room-lit';
+        if (isKillerHere) {
+          extraClasses += ' border-red-500 ring-2 ring-red-500/40';
+        } else if (selectedCard && (selectedCard.targetType === 'room' || selectedCard.targetType === 'resident')) {
+          extraClasses += ' border-amber-400/80 hover:border-amber-300';
+        } else if (inLos && roomResidents.length > 0) {
+          extraClasses += ' stalk-target-glow';
+        } else if (isAdj) {
+          extraClasses += ' border-zinc-600 hover:border-red-500/80';
+        } else {
+          extraClasses += ' border-zinc-800/90';
+        }
+
+        const cardEl = document.createElement('div');
+        cardEl.className = `rounded-xl border p-2.5 sm:p-3 min-h-[132px] flex flex-col justify-between transition cursor-pointer relative ${extraClasses}`;
+        cardEl.onclick = () => handleRoomClick(room.id);
+
+        // 顶部房间名与状态标签
+        const badges = [];
+        if (room.isExit) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-700/60">🚪 出口</span>');
+        if (room.locked) badges.push(`<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/90 text-amber-300 border border-amber-700/60">🔒 锁(${room.lockedTurns}t)</span>`);
+        if (room.dark) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">⚡ 黑暗</span>');
+        if (room.horrificScene) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-950 text-red-200 border border-red-600/60">🩸 惨状</span>');
+        if (!isKillerHere && inLos) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-800/50">👁️ 视野</span>');
+
+        const topHtml = `
+          <div>
+            <div class="flex items-start justify-between gap-1">
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-zinc-100 leading-tight">${room.name}</div>
+                <div class="text-[10px] text-zinc-400">${room.tag}${isAdj && !isKillerHere ? ' · 可移动' : ''}</div>
+              </div>
+              ${isKillerHere ? '<span class="px-2 py-0.5 rounded-md bg-red-600 text-white text-[11px] font-bold shadow">🔪 迈尔斯</span>' : ''}
+            </div>
+            <div class="flex flex-wrap gap-1 mt-1.5">${badges.join('')}</div>
+          </div>
+        `;
+
+        // 房间内居民指示物
+        let residentsHtml = '';
+        if (roomResidents.length > 0) {
+          residentsHtml = `<div class="mt-2.5 flex flex-wrap gap-1.5">` + roomResidents.map(r => {
+            const statePill = r.broken
+              ? '<span class="ml-1 px-1 py-0.2 rounded bg-red-600 text-white text-[9px] font-bold">待处决</span>'
+              : `<span class="ml-1 text-[10px] font-mono-num text-amber-300">恐${r.panic}</span>`;
+            const roleTag = r.role !== '普通居民' ? `<span class="ml-1 text-[9px] px-1 rounded bg-sky-950 text-sky-300 border border-sky-700/50">${r.role}</span>` : '';
+            return `
+              <button type="button" onclick="handleResidentDirectClick(event, '${r.id}')"
+                class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] border transition cursor-pointer ${
+                  r.broken
+                    ? 'bg-red-950/90 border-red-500 text-red-100 broken-resident'
+                    : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                }">
+                <span>${r.icon}</span>
+                <span class="ml-1 font-medium">${r.name.split('·')[0]}</span>
+                ${roleTag}
+                ${statePill}
+              </button>
+            `;
+          }).join('') + `</div>`;
+        } else {
+          residentsHtml = `<div class="mt-2.5 text-[11px] text-zinc-600 italic">房间内无人</div>`;
+        }
+
+        cardEl.innerHTML = topHtml + residentsHtml;
+        grid.appendChild(cardEl);
+      });
+    }
+
+    function renderRoster() {
+      const s = gameState;
+      const alive = s.residents.filter(r => r.alive);
+      document.getElementById('aliveCountLabel').textContent = `存活: ${alive.length}/${s.residents.length}`;
+
+      const box = document.getElementById('residentRoster');
+      box.innerHTML = '';
+
+      s.residents.forEach(r => {
+        const roomName = s.rooms[r.roomId]?.name || '未知';
+        const statusLabel = !r.alive
+          ? '<span class="text-zinc-500 line-through">已处决/离场</span>'
+          : (r.broken
+            ? '<span class="text-red-400 font-bold">【崩溃/待宰】</span>'
+            : (r.panic >= 2 ? '<span class="text-amber-300 font-semibold">【惊慌逃跑】</span>' : '<span class="text-zinc-300">【冷静】</span>'));
+
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs ${
+          !r.alive ? 'bg-zinc-900/30 border-zinc-800/50 opacity-55' : 'bg-zinc-900/80 border-zinc-800'
+        }`;
+        row.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <span>${r.icon}</span>
+            <div class="truncate">
+              <span class="font-medium text-zinc-100">${r.name}</span>
+              <span class="text-[10px] text-zinc-500 ml-1">${r.alive ? `@ ${roomName}` : ''}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 font-mono-num text-[11px]">
+            ${r.alive ? `<span class="text-amber-400">恐慌:${r.panic}</span>` : ''}
+            ${statusLabel}
+          </div>
+        `;
+        box.appendChild(row);
+      });
+    }
+
+    function renderHand() {
+      const s = gameState;
+      const container = document.getElementById('handContainer');
+      container.innerHTML = '';
+      document.getElementById('deckStatsLabel').textContent = `牌库: ${s.deck.length} | 手牌: ${s.hand.length} | 弃牌: ${s.discard.length}`;
+
+      s.hand.forEach(card => {
+        const canAfford = s.ap >= card.cost && !s.gameOver;
+        const isSelected = s.selectedCardUid === card.uid;
+
+        const el = document.createElement('div');
+        el.className = `killer-card rounded-xl border p-3 flex flex-col justify-between bg-zinc-900/95 ${
+          isSelected ? 'card-selected border-amber-400' : 'border-zinc-800'
+        } ${!canAfford ? 'card-disabled opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-red-600/80'}`;
+
+        el.onclick = () => {
+          if (!canAfford) return;
+          selectCard(card.uid);
+        };
+
+        el.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${card.badgeColor}">${card.type}</span>
+              <span class="font-mono-num text-xs font-bold px-2 py-0.5 rounded-md bg-amber-950/90 text-amber-300 border border-amber-700/60">
+                ${card.cost} AP
+              </span>
+            </div>
+            <div class="text-sm font-bold text-zinc-100 mb-1">${card.name}</div>
+            <p class="text-[11px] leading-relaxed text-zinc-400">${card.desc}</p>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-500">
+            <span>${card.targetType === 'self' ? '立即发动' : (card.targetType === 'room' ? '选房间释放' : '选目标释放')}</span>
+            <span class="${isSelected ? 'text-amber-400 font-bold' : 'text-red-400'}">${isSelected ? '已选中 ▸' : '点击使用'}</span>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    // 启动游戏
+    window.addEventListener('DOMContentLoaded', startNewGame);
+  </script>
+</body>
+</html>
