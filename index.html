@@ -195,33 +195,6 @@
       box-shadow:inset 3px 0 #9e2637, 0 10px 30px rgba(0,0,0,.3);
       backdrop-filter:blur(14px);
     }
-    #mapGrid > div {
-      min-height:176px !important; overflow:hidden; isolation:isolate;
-      background-color:#11151b !important;
-      background-size:cover !important; background-position:center !important;
-      border-color:rgba(174,188,207,.23) !important;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.025), 0 9px 24px rgba(0,0,0,.35);
-      transition:transform .22s ease, filter .22s ease, border-color .22s ease;
-    }
-    #mapGrid > div::before {
-      content:""; position:absolute; inset:0; z-index:-1;
-      background:linear-gradient(180deg,rgba(5,7,10,.24),rgba(5,7,10,.78) 64%,rgba(5,7,10,.94));
-      transition:background .2s ease;
-    }
-    #mapGrid > div::after {
-      content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
-      background:radial-gradient(ellipse at 50% 20%,rgba(150,177,207,.12),transparent 65%);
-    }
-    #mapGrid > div:hover { transform:translateY(-3px); filter:brightness(1.16); }
-    #mapGrid > div:nth-child(1) { background-image:url('https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(2) { background-image:url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(3) { background-image:url('https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(4) { background-image:url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(5) { background-image:url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(6) { background-image:url('https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(7) { background-image:url('https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(8) { background-image:url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80') !important; }
-    #mapGrid > div:nth-child(9) { background-image:url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80') !important; }
     .killer-card {
       min-height:172px; position:relative; overflow:hidden;
       background:linear-gradient(155deg,rgba(36,39,48,.96),rgba(10,12,17,.98)) !important;
@@ -710,7 +683,7 @@
             return { ok: false, reason: '目标尚未进入【惊慌(恐慌≥2)】或【崩溃】状态，无法如影随形锁定！' };
           }
           state.evil -= 2;
-          moveKillerToRoom(state, target.roomId, true);
+          if (!moveKillerToRoom(state, target.roomId, true)) return { ok: false, reason: '目标房间无法进入，瞬移失败。' };
           logEvent(`迈尔斯消耗 2 恶念，如幽灵般出现在【${state.rooms[target.roomId].name}】的【${target.name}】身后！`, 'evil');
           if (target.broken) {
             executeResident(state, target, '如影随形瞬杀', 3, 1);
@@ -827,7 +800,7 @@
           if (!getAdjacentRooms(state.killerRoom).includes(roomId)) {
             return { ok: false, reason: '【破窗而入】只能突入相邻房间！' };
           }
-          moveKillerToRoom(state, roomId, true);
+          if (!moveKillerToRoom(state, roomId, true)) return { ok: false, reason: '目标房间被锁定，无法突入。' };
           const count = applyPanicToRoomResidents(state, roomId, 2, '玻璃粉碎破窗而入');
           state.ap = Math.min(state.maxAp, state.ap + 1);
           logEvent(`哗啦——玻璃粉碎！迈尔斯破窗突入【${state.rooms[roomId].name}】，${count} 名居民恐慌 +2，返还 1 AP！`, 'kill');
