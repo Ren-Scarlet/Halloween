@@ -299,6 +299,22 @@
     #appShell > main > section,#appShell > main > aside > div,#appShell > section:last-of-type { border-radius:5px !important; }
     @media(max-width:700px) { .killer-hero { min-height:230px;padding:25px 20px; }.killer-hero-portrait { right:-3%;width:52%;opacity:.72; }.hero-bottomline { left:20px;right:20px; }.hero-title { max-width:65%;font-size:29px; } }
 
+
+    /* TOP-DOWN HOUSE MAP */
+    .house-tactical-map { isolation:isolate; }
+    .house-room-hotspot { position:absolute;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px;border:2px solid transparent;border-radius:3px;color:#f0e8d8;text-shadow:0 2px 5px #000,0 0 10px #000;cursor:pointer;transition:background .16s,border-color .16s,filter .16s;overflow:hidden; }
+    .house-room-hotspot:hover { z-index:4;filter:brightness(1.35);background:rgba(171,126,76,.3)!important;border-color:#d6b37b!important; }
+    .house-room-label { font:700 clamp(8px,1vw,13px)/1.1 Georgia,serif;letter-spacing:.07em;text-transform:uppercase;background:rgba(4,6,8,.68);padding:3px 6px;border:1px solid rgba(204,185,153,.22);max-width:96%; }
+    .house-killer-marker { font-size:clamp(9px,1vw,13px);font-weight:800;color:#fff;background:rgba(126,20,29,.92);border:1px solid #e16b70;padding:3px 7px;box-shadow:0 0 16px rgba(190,33,43,.5); }
+    .house-state-tag { font:700 9px monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(6,28,19,.88);border:1px solid rgba(81,164,119,.6);color:#b5e5c9; }
+    .house-state-tag.locked {background:rgba(61,40,10,.9);border-color:#a87c35;color:#f2d18d}
+    .house-state-tag.dark {background:rgba(23,28,55,.9);border-color:#6774ad;color:#c1caff}
+    .house-state-tag.danger {background:rgba(70,8,14,.9);border-color:#b64b55;color:#ffd1d1}
+    .house-residents {display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:95%}
+    .house-residents i {font-style:normal;font-size:clamp(10px,1.25vw,17px);line-height:1;background:rgba(6,8,10,.86);border:1px solid rgba(218,203,175,.32);padding:3px;border-radius:2px;box-shadow:0 2px 7px #000}
+    .house-map-caption {position:absolute;right:10px;bottom:8px;z-index:5;color:rgba(235,224,204,.58);font:9px monospace;letter-spacing:.2em;text-shadow:0 2px 5px #000;pointer-events:none}
+    @media(max-width:700px) { #mapGrid { min-height:290px!important; }.house-room-label {font-size:7px;padding:2px 3px}.house-state-tag {font-size:7px}.house-killer-marker {font-size:8px;padding:2px 3px} }
+
   </style>
 </head>
 <body class="antialiased selection:bg-red-700 selection:text-white">
@@ -443,14 +459,14 @@
       <div class="hero-bottomline"><span>01 / THE SHAPE</span><span>THE NIGHT IS NOT OVER</span></div>
     </section>
 
-    <!-- 主战区：左侧 3x3 房屋庭院地图 + 右侧 猎物情报 & 恐怖日志 -->
+    <!-- 主战区：俯视角房屋地图 + 右侧 猎物情报 & 恐怖日志 -->
     <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-      <!-- 左侧 8 列：3x3 地图 -->
+      <!-- 左侧 8 列：俯视角房屋地图 -->
       <section class="lg:col-span-8 rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3 sm:p-4 shadow-2xl">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div>
             <h2 class="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
-              <span>🏠 哈登菲尔德大宅与庭院 (3×3 战术平面图)</span>
+              <span>🏠 房屋战术地图 · 俯视结构</span>
             </h2>
             <p class="text-[11px] sm:text-xs text-zinc-400">
               红框虚线 = 迈尔斯当前【凝视线】可凝视房间；点击相邻房间移动（1 AP）；也可直接点击房间内【崩溃】居民发动基础刀击（1 AP）。
@@ -463,8 +479,8 @@
           </div>
         </div>
 
-        <!-- 3x3 网格 -->
-        <div id="mapGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3"></div>
+        <!-- 单张连续房屋平面图，房间热区仍可点击 -->
+        <div id="mapGrid" class="house-tactical-map"></div>
       </section>
 
       <!-- 右侧 4 列：居民与目标状态 + 实时战斗日志 -->
@@ -1045,6 +1061,7 @@
         finalGirlSpawned: false,
         gameOver: false,
         killerRoom: 'front_yard',
+        mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
         rooms,
         residents: createInitialResidents(),
         deck: shuffledDeck,
@@ -1721,87 +1738,63 @@
       const s = gameState;
       const grid = document.getElementById('mapGrid');
       grid.innerHTML = '';
+      const skins = ['haddonfield', 'farmhouse', 'motel', 'workshop'];
+      const skin = skins.includes(s.mapSkin) ? s.mapSkin : 'haddonfield';
+      grid.style.backgroundImage = "linear-gradient(rgba(3,5,8,.08),rgba(3,5,8,.18)),url('assets/maps/" + skin + ".svg')";
+      grid.style.backgroundSize = '100% 100%';
+      grid.style.backgroundPosition = 'center';
+      grid.style.backgroundRepeat = 'no-repeat';
+      grid.style.position = 'relative';
+      grid.style.width = '100%';
+      grid.style.aspectRatio = '930 / 740';
+      grid.style.minHeight = '380px';
+      grid.style.maxHeight = 'min(78vw, 760px)';
+      grid.style.border = '1px solid rgba(190,176,150,.42)';
+      grid.style.borderRadius = '5px';
+      grid.style.overflow = 'hidden';
+      grid.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.45),0 18px 42px rgba(0,0,0,.45)';
 
       const adjIds = getAdjacentRooms(s.killerRoom);
       const losIds = getLineOfSightRooms(s, s.killerRoom);
       const selectedCard = s.hand.find(c => c.uid === s.selectedCardUid);
+      const spots = {
+        balcony:[48,66,240,168], master_bed:[326,66,270,168], bathroom:[636,66,245,168],
+        hallway:[48,292,240,164], living_room:[326,278,270,196], kitchen:[636,292,245,164],
+        basement:[48,526,240,156], front_yard:[326,526,270,156], garage:[636,526,245,156]
+      };
 
-      const orderedRooms = [...MAP_ROOMS_TEMPLATE].sort((a, b) => (a.row - b.row) || (a.col - b.col));
-
-      orderedRooms.forEach(tmpl => {
+      MAP_ROOMS_TEMPLATE.forEach(tmpl => {
         const room = s.rooms[tmpl.id];
+        const [x,y,w,h] = spots[tmpl.id];
         const isKillerHere = s.killerRoom === room.id;
         const isAdj = adjIds.includes(room.id);
         const inLos = losIds.includes(room.id);
         const roomResidents = s.residents.filter(r => r.alive && r.roomId === room.id);
-
-        let extraClasses = room.dark ? 'room-dark' : 'room-lit';
-        if (isKillerHere) {
-          extraClasses += ' border-red-500 ring-2 ring-red-500/40';
-        } else if (selectedCard && (selectedCard.targetType === 'room' || selectedCard.targetType === 'resident')) {
-          extraClasses += ' border-amber-400/80 hover:border-amber-300';
-        } else if (inLos && roomResidents.length > 0) {
-          extraClasses += ' stalk-target-glow';
-        } else if (isAdj) {
-          extraClasses += ' border-zinc-600 hover:border-red-500/80';
-        } else {
-          extraClasses += ' border-zinc-800/90';
-        }
-
-        const cardEl = document.createElement('div');
-        cardEl.className = `rounded-xl border p-2.5 sm:p-3 min-h-[132px] flex flex-col justify-between transition cursor-pointer relative ${extraClasses}`;
-        cardEl.onclick = () => handleRoomClick(room.id);
-
-        // 顶部房间名与状态标签
-        const badges = [];
-        if (room.isExit) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-700/60">🚪 出口</span>');
-        if (room.locked) badges.push(`<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/90 text-amber-300 border border-amber-700/60">🔒 锁(${room.lockedTurns}t)</span>`);
-        if (room.dark) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">⚡ 黑暗</span>');
-        if (room.horrificScene) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-950 text-red-200 border border-red-600/60">🩸 惨状</span>');
-        if (!isKillerHere && inLos) badges.push('<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-800/50">👁️ 视野</span>');
-
-        const topHtml = `
-          <div>
-            <div class="flex items-start justify-between gap-1">
-              <div>
-                <div class="text-xs sm:text-sm font-bold text-zinc-100 leading-tight">${room.name}</div>
-                <div class="text-[10px] text-zinc-400">${room.tag}${isAdj && !isKillerHere ? ' · 可移动' : ''}</div>
-              </div>
-              ${isKillerHere ? '<span class="px-2 py-0.5 rounded-md bg-red-600 text-white text-[11px] font-bold shadow">🔪 迈尔斯</span>' : ''}
-            </div>
-            <div class="flex flex-wrap gap-1 mt-1.5">${badges.join('')}</div>
-          </div>
-        `;
-
-        // 房间内居民指示物
-        let residentsHtml = '';
-        if (roomResidents.length > 0) {
-          residentsHtml = `<div class="mt-2.5 flex flex-wrap gap-1.5">` + roomResidents.map(r => {
-            const statePill = r.broken
-              ? '<span class="ml-1 px-1 py-0.2 rounded bg-red-600 text-white text-[9px] font-bold">待处决</span>'
-              : `<span class="ml-1 text-[10px] font-mono-num text-amber-300">恐${r.panic}</span>`;
-            const roleTag = r.role !== '普通居民' ? `<span class="ml-1 text-[9px] px-1 rounded bg-sky-950 text-sky-300 border border-sky-700/50">${r.role}</span>` : '';
-            return `
-              <button type="button" onclick="handleResidentDirectClick(event, '${r.id}')"
-                class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] border transition cursor-pointer ${
-                  r.broken
-                    ? 'bg-red-950/90 border-red-500 text-red-100 broken-resident'
-                    : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-700 text-zinc-200'
-                }">
-                <span>${r.icon}</span>
-                <span class="ml-1 font-medium">${r.name.split('·')[0]}</span>
-                ${roleTag}
-                ${statePill}
-              </button>
-            `;
-          }).join('') + `</div>`;
-        } else {
-          residentsHtml = `<div class="mt-2.5 text-[11px] text-zinc-600 italic">房间内无人</div>`;
-        }
-
-        cardEl.innerHTML = topHtml + residentsHtml;
-        grid.appendChild(cardEl);
+        const hotspot = document.createElement('button');
+        hotspot.type = 'button';
+        hotspot.className = 'house-room-hotspot';
+        hotspot.style.left = (x/930*100) + '%';
+        hotspot.style.top = (y/740*100) + '%';
+        hotspot.style.width = (w/930*100) + '%';
+        hotspot.style.height = (h/740*100) + '%';
+        hotspot.style.borderColor = isKillerHere ? '#d34a50' : (selectedCard ? '#d2ad71' : (inLos && roomResidents.length ? '#b94d54' : (isAdj ? '#c6a06b' : 'rgba(0,0,0,0)')));
+        hotspot.style.background = isKillerHere ? 'linear-gradient(135deg,rgba(119,22,29,.46),rgba(10,8,9,.12))' : (selectedCard ? 'rgba(184,139,75,.14)' : (inLos && roomResidents.length ? 'rgba(135,25,35,.2)' : 'rgba(4,7,9,.12)'));
+        hotspot.style.boxShadow = isKillerHere ? 'inset 0 0 28px rgba(205,48,58,.36)' : (isAdj ? 'inset 0 0 18px rgba(196,151,91,.16)' : 'none');
+        hotspot.innerHTML = '<span class="house-room-label">' + room.name + '</span>' +
+          (isKillerHere ? '<span class="house-killer-marker">🔪 迈尔斯</span>' : '') +
+          (room.isExit ? '<span class="house-state-tag">出口</span>' : '') +
+          (room.locked ? '<span class="house-state-tag locked">🔒 锁门</span>' : '') +
+          (room.dark ? '<span class="house-state-tag dark">黑暗</span>' : '') +
+          (room.horrificScene ? '<span class="house-state-tag danger">血迹</span>' : '') +
+          (roomResidents.length ? '<span class="house-residents">' + roomResidents.map(r => '<i title="' + r.name + '">' + r.icon + '</i>').join('') + '</span>' : '');
+        hotspot.setAttribute('aria-label', room.name + (isKillerHere ? '，迈尔斯所在' : ''));
+        hotspot.onclick = () => handleRoomClick(room.id);
+        grid.appendChild(hotspot);
       });
+      const caption = document.createElement('div');
+      caption.className = 'house-map-caption';
+      caption.textContent = skin.toUpperCase() + ' · TACTICAL FLOORPLAN';
+      grid.appendChild(caption);
     }
 
     function renderRoster() {
