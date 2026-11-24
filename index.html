@@ -264,6 +264,41 @@
       .killer-card { min-height:145px; }
     }
 
+
+    /* CINEMATIC HORROR UI */
+    body { background-image:linear-gradient(180deg,rgba(4,7,11,.58),rgba(4,6,9,.9)),url('assets/haddonfield-night.svg') !important;background-size:cover !important;background-position:center top !important;background-attachment:fixed !important; }
+    #appShell { max-width:1740px !important; }
+    #appShell > header { min-height:104px;border-radius:5px !important;padding:18px 22px !important; }
+    #appShell > header h1 { font-family:Georgia,serif;letter-spacing:.12em;text-transform:uppercase; }
+    .killer-hero { min-height:270px;position:relative;overflow:hidden;display:flex;align-items:center;padding:34px 42px;border:1px solid rgba(180,194,208,.22);border-left:3px solid #a52b39;border-radius:5px;background:linear-gradient(90deg,rgba(7,10,14,.98) 0%,rgba(9,13,18,.9) 46%,rgba(9,12,16,.18) 100%),url('assets/haddonfield-night.svg') center 55%/cover;box-shadow:0 22px 60px rgba(0,0,0,.52),inset 0 1px rgba(255,255,255,.05);isolation:isolate; }
+    .killer-hero:after { content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(0,0,0,.5),transparent 45%),radial-gradient(ellipse at 72% 50%,rgba(161,35,48,.18),transparent 38%); }
+    .killer-hero-copy { position:relative;z-index:2;max-width:620px;padding-bottom:12px; }
+    .hero-eyebrow { display:flex;align-items:center;gap:10px;color:#c7a77d;font-size:10px;letter-spacing:.28em;font-weight:700; }
+    .hero-eyebrow span { width:7px;height:7px;border-radius:50%;background:#b52b3b;box-shadow:0 0 15px #d72f43; }
+    .hero-title { margin-top:16px;color:#f0eee9;font:700 clamp(30px,4vw,48px)/1.1 Georgia,serif;letter-spacing:.08em;text-shadow:0 4px 30px #000; }
+    .killer-hero-copy p { margin-top:12px;color:#aeb7c0;font-size:13px;letter-spacing:.08em; }
+    .hero-tags { display:flex;gap:8px;margin-top:22px;flex-wrap:wrap; }
+    .hero-tags span { padding:6px 11px;border:1px solid rgba(185,194,204,.25);background:rgba(7,10,14,.72);color:#c9d0d7;font-size:10px;letter-spacing:.12em; }
+    .killer-hero-portrait { position:absolute;right:8%;bottom:-35px;width:min(34%,360px);height:112%;background:url('assets/myers-portrait.svg') center 20%/cover no-repeat;filter:drop-shadow(0 10px 35px rgba(0,0,0,.9));mask-image:linear-gradient(90deg,transparent 0%,black 24%); }
+    .hero-bottomline { position:absolute;left:42px;right:42px;bottom:12px;display:flex;justify-content:space-between;color:rgba(202,211,220,.4);font:9px/1 monospace;letter-spacing:.2em; }
+    #mapGrid { gap:10px !important; }
+    #mapGrid > div { min-height:188px !important;border-radius:4px !important;padding:14px !important;background-image:linear-gradient(180deg,rgba(7,10,14,.24),rgba(5,7,10,.91)),url('assets/haddonfield-night.svg') !important;background-size:cover,cover !important;background-position:center,center !important;border:1px solid rgba(179,191,205,.24) !important; }
+    #mapGrid > div:nth-child(2n) { background-position:center,72% center !important; }
+    #mapGrid > div:nth-child(3n) { background-position:center,25% center !important; }
+    #mapGrid > div:before { background:linear-gradient(180deg,rgba(4,7,11,.12),rgba(4,7,11,.38) 36%,rgba(4,7,11,.94)) !important; }
+    #mapGrid > div:hover { border-color:rgba(193,153,105,.8) !important;box-shadow:0 0 0 1px rgba(193,153,105,.2),0 16px 30px rgba(0,0,0,.5) !important; }
+    #mapGrid > div .text-xs,#mapGrid > div .text-sm { text-shadow:0 2px 8px #000; }
+    #residentRoster > div { border-radius:3px !important; }
+    .killer-card { min-height:205px !important;border-radius:4px !important;padding:0 !important; }
+    .killer-card > div:first-child { padding:12px 13px 0; }
+    .killer-card .card-art { height:76px;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:relative;overflow:hidden;background:linear-gradient(115deg,rgba(61,29,34,.92),rgba(15,19,25,.96));border-bottom:1px solid rgba(188,153,111,.22); }
+    .killer-card .card-art:after { content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 12px,rgba(255,255,255,.025) 13px 14px); }
+    .killer-card .card-art strong { font:italic 42px Georgia,serif;color:rgba(224,204,179,.82);text-shadow:0 4px 15px #000; }
+    .killer-card .card-art small { z-index:1;color:rgba(218,207,193,.56);font:8px monospace;letter-spacing:.2em; }
+    .killer-card > div:last-child { margin:10px 13px 12px !important;padding-top:9px !important; }
+    #appShell > main > section,#appShell > main > aside > div,#appShell > section:last-of-type { border-radius:5px !important; }
+    @media(max-width:700px) { .killer-hero { min-height:230px;padding:25px 20px; }.killer-hero-portrait { right:-3%;width:52%;opacity:.72; }.hero-bottomline { left:20px;right:20px; }.hero-title { max-width:65%;font-size:29px; } }
+
   </style>
 </head>
 <body class="antialiased selection:bg-red-700 selection:text-white">
@@ -394,6 +429,18 @@
       <div id="actionPromptText" class="text-amber-300/95 font-medium">
         提示：点击相邻房间移动（1 AP），或点击下方手牌选择战术，再点击地图房间/目标释放。
       </div>
+    </section>
+
+    <!-- 电影感角色主视觉：原创迈尔斯立绘 -->
+    <section class="killer-hero">
+      <div class="killer-hero-copy">
+        <div class="hero-eyebrow"><span></span> THE SHAPE · HADDONFIELD, 1978</div>
+        <div class="hero-title">他就在黑暗里。</div>
+        <p>没有脚步声，没有警告。只有面具后沉默的注视。</p>
+        <div class="hero-tags"><span>潜行猎杀</span><span>恶念觉醒</span><span>不可阻挡</span></div>
+      </div>
+      <div class="killer-hero-portrait" role="img" aria-label="原创迈尔斯风格杀手立绘"></div>
+      <div class="hero-bottomline"><span>01 / THE SHAPE</span><span>THE NIGHT IS NOT OVER</span></div>
     </section>
 
     <!-- 主战区：左侧 3x3 房屋庭院地图 + 右侧 猎物情报 & 恐怖日志 -->
@@ -1814,8 +1861,10 @@
           selectCard(card.uid);
         };
 
+        const artSymbol = card.type.includes("环境") ? "⚡" : (card.type.includes("凝视") ? "◉" : (card.type.includes("移动") ? "↗" : (card.type.includes("攻击") || card.type.includes("处决") ? "†" : "✦")));
         el.innerHTML = `
           <div>
+            <div class="card-art"><strong>${artSymbol}</strong><small>THE SHAPE · FIELD RECORD</small></div>
             <div class="flex items-center justify-between gap-1.5 mb-1.5">
               <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${card.badgeColor}">${card.type}</span>
               <span class="font-mono-num text-xs font-bold px-2 py-0.5 rounded-md bg-amber-950/90 text-amber-300 border border-amber-700/60">
