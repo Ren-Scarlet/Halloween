@@ -938,19 +938,30 @@
     // 3. 3x3 哈登菲尔德房屋与庭院地图
     // --------------------------------------------------------------------------
     const MAP_ROOMS_TEMPLATE = [
-      { id: 'balcony', name: '阳台/屋顶', row: 0, col: 0, tag: '高处俯瞰', isExit: false, defaultDark: false },
-      { id: 'master_bed', name: '主卧（带窗）', row: 0, col: 1, tag: '临窗卧室', isExit: false, defaultDark: false },
-      { id: 'bathroom', name: '浴室', row: 0, col: 2, tag: '密闭空间', isExit: false, defaultDark: true },
-
-      { id: 'hallway', name: '走廊（枢纽）', row: 1, col: 0, tag: '中心走廊', isExit: false, defaultDark: false },
-      { id: 'living_room', name: '客厅（大窗）', row: 1, col: 1, tag: '临窗大厅', isExit: false, defaultDark: false },
-      { id: 'kitchen', name: '厨房', row: 1, col: 2, tag: '逃生出口', isExit: true, defaultDark: false },
-
-      { id: 'basement', name: '地下室', row: 2, col: 0, tag: '幽暗死角', isExit: false, defaultDark: true },
-      { id: 'front_yard', name: '前院灌木', row: 2, col: 1, tag: '阴影起点', isExit: false, defaultDark: true },
-      { id: 'garage', name: '车库', row: 2, col: 2, tag: '逃生出口', isExit: true, defaultDark: false }
+      { id: 'balcony', name: '阳台/屋顶', tag: '高处俯瞰', isExit: false, defaultDark: false },
+      { id: 'master_bed', name: '主卧（带窗）', tag: '临窗卧室', isExit: false, defaultDark: false },
+      { id: 'bathroom', name: '浴室', tag: '密闭空间', isExit: false, defaultDark: true },
+      { id: 'hallway', name: '走廊（枢纽）', tag: '中心走廊', isExit: false, defaultDark: false },
+      { id: 'living_room', name: '客厅（大窗）', tag: '临窗大厅', isExit: false, defaultDark: false },
+      { id: 'kitchen', name: '厨房', tag: '逃生出口', isExit: true, defaultDark: false },
+      { id: 'basement', name: '地下室', tag: '幽暗死角', isExit: false, defaultDark: true },
+      { id: 'front_yard', name: '前院灌木', tag: '阴影起点', isExit: false, defaultDark: true },
+      { id: 'garage', name: '车库', tag: '逃生出口', isExit: true, defaultDark: false },
+      { id: 'dining_room', name: '餐厅', tag: '家庭聚集区', isExit: false, defaultDark: false },
+      { id: 'study', name: '书房', tag: '狭窄空间', isExit: false, defaultDark: false },
+      { id: 'guest_room', name: '客房', tag: '临时卧室', isExit: false, defaultDark: false },
+      { id: 'laundry', name: '洗衣房', tag: '杂物间', isExit: false, defaultDark: true },
+      { id: 'storage', name: '储藏室', tag: '幽暗死角', isExit: false, defaultDark: true },
+      { id: 'nursery', name: '儿童房', tag: '安静房间', isExit: false, defaultDark: false },
+      { id: 'porch', name: '门廊', tag: '屋外入口', isExit: true, defaultDark: false }
     ];
 
+    function generateHouseLayout() {
+      const cells = [];
+      for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) cells.push({ row, col });
+      const shuffledCells = shuffleArray(cells);
+      return MAP_ROOMS_TEMPLATE.map((room, index) => ({ ...room, row: shuffledCells[index].row, col: shuffledCells[index].col }));
+    }
     // --------------------------------------------------------------------------
     // 4. Web Audio API 恐怖音效引擎（无需外部文件）
     // --------------------------------------------------------------------------
@@ -1017,65 +1028,41 @@
     // --------------------------------------------------------------------------
     let gameState = null;
 
-    function createInitialResidents() {
-      return [
-        { id: 'r1', name: '劳丽·邻家少女', role: '普通居民', icon: '👧', roomId: 'living_room', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 },
-        { id: 'r2', name: '汤米·小男孩', role: '普通居民', icon: '👦', roomId: 'master_bed', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 },
-        { id: 'r3', name: '琳达·派对女孩', role: '普通居民', icon: '👱‍♀️', roomId: 'kitchen', panic: 0, broken: false, alive: true, armed: false, specialScore: 0 },
-        { id: 'r4', name: '鲍勃·机械学徒', role: '普通居民', icon: '🧑', roomId: 'garage', panic: 0, broken: false, alive: true, armed: false, specialScore: 0 },
-        { id: 'r5', name: '安妮·好奇学生', role: '普通居民', icon: '👩', roomId: 'bathroom', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 },
-        { id: 'r6', name: '老管家·看守人', role: '普通居民', icon: '🧓', roomId: 'basement', panic: 1, broken: false, alive: true, armed: false, specialScore: 0 }
+    function createInitialResidents(roomIds) {
+      const pool = [
+        { name: '劳丽·邻家少女', icon: '👧', panic: 1 },
+        { name: '汤米·小男孩', icon: '👦', panic: 1 },
+        { name: '琳达·派对女孩', icon: '👱‍♀️', panic: 0 },
+        { name: '鲍勃·机械学徒', icon: '🧑', panic: 0 },
+        { name: '安妮·好奇学生', icon: '👩', panic: 1 },
+        { name: '老管家·看守人', icon: '🧓', panic: 1 },
+        { name: '艾米·夜班护士', icon: '👩‍⚕️', panic: 0 },
+        { name: '杰克·大学生', icon: '🧑‍🎓', panic: 1 }
       ];
+      const count = 5 + Math.floor(Math.random() * 4);
+      return shuffleArray(pool).slice(0, count).map((person, index) => ({
+        id: 'r' + (index + 1), name: person.name, role: '普通居民', icon: person.icon,
+        roomId: roomIds[Math.floor(Math.random() * roomIds.length)], panic: person.panic,
+        broken: false, alive: true, armed: false, specialScore: 0
+      }));
     }
-
     function startNewGame() {
       document.getElementById('endModal').classList.add('hidden');
+      const layout = generateHouseLayout();
       const rooms = {};
-      MAP_ROOMS_TEMPLATE.forEach(r => {
-        rooms[r.id] = {
-          ...r,
-          dark: r.defaultDark,
-          darkTurns: r.defaultDark ? 99 : 0,
-          locked: false,
-          lockedTurns: 0,
-          horrificScene: false
-        };
-      });
-
-      const shuffledDeck = shuffleArray(CARD_TEMPLATES_MYERS.map((c, idx) => ({ ...c, uid: `${c.id}_${idx}_${Math.random().toString(36).slice(2, 6)}` })));
-
+      layout.forEach(r => { rooms[r.id] = { ...r, dark: r.defaultDark, darkTurns: r.defaultDark ? 99 : 0, locked: false, lockedTurns: 0, horrificScene: false }; });
+      const shuffledDeck = shuffleArray(CARD_TEMPLATES_MYERS.map((c, idx) => ({ ...c, uid: c.id + '_' + idx + '_' + Math.random().toString(36).slice(2, 6) })));
       gameState = {
-        killerId: 'myers',
-        turn: 1,
-        maxAp: 3,
-        ap: 3,
-        evil: 0,
-        alert: 0,
-        score: 0,
-        kills: 0,
-        killsThisTurn: 0,
-        stalkUsedThisTurn: false,
-        pureEvilActive: false,
-        phoneCut: false,
-        copSpawned: false,
-        finalGirlSpawned: false,
-        gameOver: false,
-        killerRoom: 'front_yard',
-        mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
-        rooms,
-        residents: createInitialResidents(),
-        deck: shuffledDeck,
-        hand: [],
-        discard: [],
-        selectedCardUid: null
+        killerId: 'myers', turn: 1, maxAp: 3, ap: 3, evil: 0, alert: 0, score: 0, kills: 0, killsThisTurn: 0,
+        stalkUsedThisTurn: false, pureEvilActive: false, phoneCut: false, copSpawned: false, finalGirlSpawned: false, gameOver: false,
+        killerRoom: 'front_yard', mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
+        rooms, residents: createInitialResidents(Object.keys(rooms)), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null
       };
-
       drawCards(gameState, 5);
       clearLog();
-      logEvent('🌙 哈登菲尔德的夜晚降临。迈尔斯潜伏在【前院灌木】的阴影中，狩猎开始！', 'evil');
+      logEvent('🌙 新地图生成：' + Object.keys(rooms).length + ' 个房间，' + gameState.residents.length + ' 名居民。迈尔斯潜伏在【' + rooms.front_yard.name + '】，狩猎开始！', 'evil');
       renderAll();
     }
-
     // --------------------------------------------------------------------------
     // 6. 地图、凝视线与辅助规则函数
     // --------------------------------------------------------------------------
