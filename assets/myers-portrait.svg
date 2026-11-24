@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 900">
+<defs>
+ <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#25313c"/><stop offset=".45" stop-color="#10151c"/><stop offset="1" stop-color="#030507"/></linearGradient>
+ <linearGradient id="coat" x2="1" y2="1"><stop stop-color="#333b42"/><stop offset=".5" stop-color="#151a20"/><stop offset="1" stop-color="#080b10"/></linearGradient>
+ <linearGradient id="mask" x2=".8" y2="1"><stop stop-color="#f1eee4"/><stop offset=".48" stop-color="#c8c7bf"/><stop offset="1" stop-color="#777b7b"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#a5b8c7" stop-opacity=".28"/><stop offset="1" stop-color="#a5b8c7" stop-opacity="0"/></radialGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="30"/></filter>
+</defs>
+<rect width="620" height="900" fill="url(#bg)"/>
+<ellipse cx="330" cy="330" rx="250" ry="330" fill="url(#glow)" filter="url(#blur)"/>
+<path d="M45 900Q65 670 175 585L238 550 385 550 465 600Q570 690 590 900Z" fill="url(#coat)" stroke="#59616a" stroke-opacity=".22" stroke-width="5"/>
+<path d="M220 555L180 660 270 710 310 585 350 710 445 660 395 550Z" fill="#252c34"/>
+<path d="M238 180Q255 112 326 104Q405 109 427 185L421 410Q409 520 327 557Q246 519 224 411Z" fill="url(#mask)" stroke="#e2e1d8" stroke-opacity=".42" stroke-width="5"/>
+<path d="M244 236Q275 211 303 245L297 277Q267 267 246 283Z" fill="#171d24"/>
+<path d="M349 245Q382 210 413 238L408 281Q380 265 351 280Z" fill="#111820"/>
+<path d="M306 258L329 250 341 365 319 382 301 364Z" fill="#8a8c88" opacity=".8"/>
+<path d="M280 423Q327 447 374 421" fill="none" stroke="#53595b" stroke-width="9" stroke-linecap="round"/>
+<path d="M247 185Q323 145 417 190" fill="none" stroke="#f7f4eb" stroke-opacity=".32" stroke-width="8"/>
+<path d="M170 605L255 570 312 650 368 570 455 610 510 900H112Z" fill="url(#coat)"/>
+<path d="M300 630L329 660 354 900H267Z" fill="#0b0f14"/>
+<path d="M185 610L240 578 276 645 225 810 165 770Z" fill="#414a51" opacity=".35"/>
+<path d="M425 600L370 575 345 650 400 815 468 770Z" fill="#414a51" opacity=".25"/>
+<g opacity=".2" stroke="#b8c2cb"><path d="M50 0V900M570 0V900" stroke-width="2"/><path d="M0 760H620" stroke-width="1"/></g>
+<text x="34" y="842" fill="#d8dfe5" font-family="serif" font-size="24" letter-spacing="7">THE SHAPE</text>
+<text x="36" y="875" fill="#a4aeb8" font-family="sans-serif" font-size="12" letter-spacing="5">HE DOES NOT RUN</text>
+</svg>
