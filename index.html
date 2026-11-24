@@ -1725,34 +1725,59 @@
       const s = gameState;
       const grid = document.getElementById('mapGrid');
       grid.innerHTML = '';
-      const skins = ['haddonfield', 'farmhouse', 'motel', 'workshop'];
-      const skin = skins.includes(s.mapSkin) ? s.mapSkin : 'haddonfield';
-      grid.style.backgroundImage = "linear-gradient(rgba(3,5,8,.08),rgba(3,5,8,.18)),url('assets/maps/" + skin + ".webp')";
+      const palettes = {
+        haddonfield: { floor: '#40352c', wall: '#a99a83', yard: '#20251f', corridor: '#b8a88d' },
+        farmhouse: { floor: '#4a392a', wall: '#a68e70', yard: '#202017', corridor: '#b69a75' },
+        motel: { floor: '#3c3b38', wall: '#aaa49a', yard: '#1c2429', corridor: '#b4aaa0' },
+        workshop: { floor: '#3b403c', wall: '#96958b', yard: '#1b211e', corridor: '#aaa18d' }
+      };
+      const palette = palettes[s.mapSkin] || palettes.haddonfield;
+      const cellW = 250, cellH = 175, gapX = 34, gapY = 32, pad = 42;
+      const width = pad * 2 + 4 * cellW + 3 * gapX;
+      const height = pad * 2 + 4 * cellH + 3 * gapY;
+      const rooms = Object.values(s.rooms);
+      const roomAt = {};
+      rooms.forEach(room => { roomAt[room.row + ',' + room.col] = room; });
+      const center = room => ({ x: pad + room.col * (cellW + gapX) + cellW / 2, y: pad + room.row * (cellH + gapY) + cellH / 2 });
+      const links = [];
+      rooms.forEach(room => {
+        [[0,1],[1,0]].forEach(offset => {
+          const other = roomAt[(room.row + offset[0]) + ',' + (room.col + offset[1])];
+          if (!other) return;
+          const p1 = center(room), p2 = center(other);
+          links.push('<path d="M' + p1.x + ' ' + p1.y + ' L' + p2.x + ' ' + p2.y + '" stroke="' + palette.corridor + '" stroke-width="54" stroke-linecap="square" opacity=".92"/>');
+          links.push('<path d="M' + p1.x + ' ' + p1.y + ' L' + p2.x + ' ' + p2.y + '" stroke="#171513" stroke-width="4" stroke-dasharray="8 9" opacity=".55"/>');
+        });
+      });
+      const roomShapes = rooms.map(room => {
+        const x = pad + room.col * (cellW + gapX), y = pad + room.row * (cellH + gapY);
+        const floor = room.defaultDark ? '#302923' : palette.floor;
+        let furniture = '<rect x="' + (x+65) + '" y="' + (y+60) + '" width="120" height="52" rx="5" fill="#55483b" stroke="#a18a70" stroke-width="4"/><path d="M' + (x+75) + ' ' + (y+86) + 'h100" stroke="#c4ad8e" stroke-opacity=".35" stroke-width="3"/>';
+        if (room.id === 'living_room' || room.id === 'dining_room') furniture = '<rect x="' + (x+72) + '" y="' + (y+65) + '" width="105" height="55" rx="8" fill="#716050" stroke="#b09b7c" stroke-width="5"/><rect x="' + (x+83) + '" y="' + (y+74) + '" width="83" height="36" fill="#403832"/>';
+        else if (room.id === 'kitchen' || room.id === 'laundry') furniture = '<rect x="' + (x+35) + '" y="' + (y+45) + '" width="175" height="24" fill="#8e887b" stroke="#272624" stroke-width="4"/><circle cx="' + (x+160) + '" cy="' + (y+112) + '" r="25" fill="#817d74" stroke="#292b2b" stroke-width="5"/>';
+        else if (room.id === 'master_bed' || room.id === 'guest_room' || room.id === 'nursery') furniture = '<rect x="' + (x+65) + '" y="' + (y+55) + '" width="120" height="82" rx="7" fill="#645448" stroke="#a28a70" stroke-width="5"/><path d="M' + (x+72) + ' ' + (y+91) + 'h106" stroke="#c6b398" stroke-width="4"/>';
+        else if (room.id === 'bathroom') furniture = '<rect x="' + (x+45) + '" y="' + (y+52) + '" width="70" height="70" rx="8" fill="#8b918d" stroke="#303638" stroke-width="5"/><circle cx="' + (x+172) + '" cy="' + (y+94) + '" r="29" fill="#9ba09b" stroke="#333a3b" stroke-width="5"/>';
+        return '<g><rect x="' + (x+7) + '" y="' + (y+8) + '" width="' + cellW + '" height="' + cellH + '" fill="#000" opacity=".38"/><rect x="' + x + '" y="' + y + '" width="' + cellW + '" height="' + cellH + '" rx="3" fill="' + floor + '" stroke="' + palette.wall + '" stroke-width="13"/><rect x="' + (x+9) + '" y="' + (y+9) + '" width="' + (cellW-18) + '" height="' + (cellH-18) + '" fill="none" stroke="#090b0d" stroke-width="2"/>' + furniture + '<path d="M' + (x+cellW*.32) + ' ' + (y+5) + 'h' + (cellW*.36) + '" stroke="#9ba8ad" stroke-width="5" opacity=".7"/></g>';
+      });
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '"><rect width="100%" height="100%" fill="' + palette.yard + '"/>' + links.join('') + roomShapes.join('') + '<rect x="2" y="2" width="' + (width-4) + '" height="' + (height-4) + '" fill="none" stroke="' + palette.wall + '" stroke-opacity=".35" stroke-width="4"/></svg>';
+      grid.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")';
       grid.style.backgroundSize = '100% 100%';
       grid.style.backgroundPosition = 'center';
       grid.style.backgroundRepeat = 'no-repeat';
       grid.style.position = 'relative';
       grid.style.width = '100%';
-      grid.style.aspectRatio = '930 / 740';
-      grid.style.minHeight = '380px';
-      grid.style.maxHeight = 'min(78vw, 760px)';
+      grid.style.aspectRatio = width + ' / ' + height;
+      grid.style.minHeight = '500px';
+      grid.style.maxHeight = '900px';
       grid.style.border = '1px solid rgba(190,176,150,.42)';
       grid.style.borderRadius = '5px';
       grid.style.overflow = 'hidden';
       grid.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.45),0 18px 42px rgba(0,0,0,.45)';
-
       const adjIds = getAdjacentRooms(s.killerRoom);
       const losIds = getLineOfSightRooms(s, s.killerRoom);
       const selectedCard = s.hand.find(c => c.uid === s.selectedCardUid);
-      const spots = {
-        balcony:[48,66,240,168], master_bed:[326,66,270,168], bathroom:[636,66,245,168],
-        hallway:[48,292,240,164], living_room:[326,278,270,196], kitchen:[636,292,245,164],
-        basement:[48,526,240,156], front_yard:[326,526,270,156], garage:[636,526,245,156]
-      };
-
-      MAP_ROOMS_TEMPLATE.forEach(tmpl => {
-        const room = s.rooms[tmpl.id];
-        const [x,y,w,h] = spots[tmpl.id];
+      rooms.forEach(room => {
+        const x = pad + room.col * (cellW + gapX), y = pad + room.row * (cellH + gapY);
         const isKillerHere = s.killerRoom === room.id;
         const isAdj = adjIds.includes(room.id);
         const inLos = losIds.includes(room.id);
@@ -1760,10 +1785,10 @@
         const hotspot = document.createElement('button');
         hotspot.type = 'button';
         hotspot.className = 'house-room-hotspot';
-        hotspot.style.left = (x/930*100) + '%';
-        hotspot.style.top = (y/740*100) + '%';
-        hotspot.style.width = (w/930*100) + '%';
-        hotspot.style.height = (h/740*100) + '%';
+        hotspot.style.left = (x / width * 100) + '%';
+        hotspot.style.top = (y / height * 100) + '%';
+        hotspot.style.width = (cellW / width * 100) + '%';
+        hotspot.style.height = (cellH / height * 100) + '%';
         hotspot.style.borderColor = isKillerHere ? '#d34a50' : (selectedCard ? '#d2ad71' : (inLos && roomResidents.length ? '#b94d54' : (isAdj ? '#c6a06b' : 'rgba(0,0,0,0)')));
         hotspot.style.background = isKillerHere ? 'linear-gradient(135deg,rgba(119,22,29,.46),rgba(10,8,9,.12))' : (selectedCard ? 'rgba(184,139,75,.14)' : (inLos && roomResidents.length ? 'rgba(135,25,35,.2)' : 'rgba(4,7,9,.12)'));
         hotspot.style.boxShadow = isKillerHere ? 'inset 0 0 28px rgba(205,48,58,.36)' : (isAdj ? 'inset 0 0 18px rgba(196,151,91,.16)' : 'none');
@@ -1780,10 +1805,9 @@
       });
       const caption = document.createElement('div');
       caption.className = 'house-map-caption';
-      caption.textContent = skin.toUpperCase() + ' · TACTICAL FLOORPLAN';
+      caption.textContent = s.mapSkin.toUpperCase() + ' · ' + rooms.length + ' ROOMS · RANDOM FLOORPLAN';
       grid.appendChild(caption);
     }
-
     function renderRoster() {
       const s = gameState;
       const alive = s.residents.filter(r => r.alive);
