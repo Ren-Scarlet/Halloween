@@ -321,7 +321,23 @@
     .card-art{height:86px;margin:-5px -5px 11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:radial-gradient(ellipse at center,rgba(117,35,34,.45),transparent 68%),repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 1px,transparent 1px 7px),linear-gradient(145deg,#292323,#0b0c0f);border:1px solid rgba(173,133,96,.3);color:#d4b58c}
     .card-art strong{font:700 38px Cinzel,serif;text-shadow:0 0 18px rgba(174,53,49,.7)}.card-art small{font:8px 'JetBrains Mono',monospace;letter-spacing:.22em;color:#9c8a77}
 
-  .killer-info-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:80;display:flex;flex-direction:column;width:42px;background:#09090b;border:1px solid #49434c}.killer-info-rail button{min-height:100px;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.16em;background:linear-gradient(90deg,#111,#29232c);color:#ddd;border:0;border-bottom:1px solid #39323d;font-weight:800;cursor:pointer}.killer-info-rail button.active,.killer-info-rail button:hover{color:#f3bd38;box-shadow:inset 3px 0 #d49a2d}.killer-info-panel{position:fixed;z-index:79;right:42px;top:50%;transform:translate(15px,-50%);width:min(432px,calc(100vw - 58px));max-height:78vh;overflow:auto;background:#151515;border:1px solid #514852;box-shadow:0 22px 70px #000b;opacity:0;visibility:hidden;pointer-events:none;transition:.18s}.killer-info-panel.open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(0,-50%)}.killer-info-head{padding:14px 16px;background:linear-gradient(105deg,#6b286f,#37183d 54%,#100e12);display:flex;justify-content:space-between;gap:12px}.killer-info-title{font:700 23px/1.2 Georgia;color:#f5edf5}.killer-info-subtitle{margin-top:5px;color:#d5bfd8;font-size:12px}.killer-info-body{padding:17px;color:#eee;font-size:15px;line-height:1.85}.killer-info-body strong{color:#ef9a24}.killer-info-quote{padding:0 17px 16px;color:#8e8175;font:italic 12px Georgia}.killer-info-actions{display:flex;gap:7px;padding:0 16px 16px}.killer-info-actions button,.killer-info-result{flex:1;padding:9px 6px;background:#1c1b1d;border:1px solid #383438;color:#ccc;font-size:11px}.killer-info-search{padding:15px}.killer-info-search input{width:100%;padding:10px;background:#09090b;border:1px solid #514953;color:#eee}.killer-info-results{display:flex;flex-direction:column;gap:5px;margin-top:10px}.killer-info-result{text-align:left}.killer-info-result small{display:block;color:#938a96;margin-top:3px}.killer-card-info{position:absolute;right:8px;top:8px;z-index:3;padding:4px 7px;background:#08080ae8;border:1px solid #b58c58;color:#d8c19c;font-size:10px}@media(max-width:640px){.killer-info-rail{width:34px}.killer-info-rail button{min-height:86px;font-size:11px}.killer-info-panel{right:34px;width:calc(100vw - 48px)}}</style>
+  .killer-info-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:80;display:flex;flex-direction:column;width:42px;background:#09090b;border:1px solid #49434c}.killer-info-rail button{min-height:100px;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.16em;background:linear-gradient(90deg,#111,#29232c);color:#ddd;border:0;border-bottom:1px solid #39323d;font-weight:800;cursor:pointer}.killer-info-rail button.active,.killer-info-rail button:hover{color:#f3bd38;box-shadow:inset 3px 0 #d49a2d}.killer-info-panel{position:fixed;z-index:79;right:42px;top:50%;transform:translate(15px,-50%);width:min(432px,calc(100vw - 58px));max-height:78vh;overflow:auto;background:#151515;border:1px solid #514852;box-shadow:0 22px 70px #000b;opacity:0;visibility:hidden;pointer-events:none;transition:.18s}.killer-info-panel.open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(0,-50%)}.killer-info-head{padding:14px 16px;background:linear-gradient(105deg,#6b286f,#37183d 54%,#100e12);display:flex;justify-content:space-between;gap:12px}.killer-info-title{font:700 23px/1.2 Georgia;color:#f5edf5}.killer-info-subtitle{margin-top:5px;color:#d5bfd8;font-size:12px}.killer-info-body{padding:17px;color:#eee;font-size:15px;line-height:1.85}.killer-info-body strong{color:#ef9a24}.killer-info-quote{padding:0 17px 16px;color:#8e8175;font:italic 12px Georgia}.killer-info-actions{display:flex;gap:7px;padding:0 16px 16px}.killer-info-actions button,.killer-info-result{flex:1;padding:9px 6px;background:#1c1b1d;border:1px solid #383438;color:#ccc;font-size:11px}.killer-info-search{padding:15px}.killer-info-search input{width:100%;padding:10px;background:#09090b;border:1px solid #514953;color:#eee}.killer-info-results{display:flex;flex-direction:column;gap:5px;margin-top:10px}.killer-info-result{text-align:left}.killer-info-result small{display:block;color:#938a96;margin-top:3px}.killer-card-info{position:absolute;right:8px;top:8px;z-index:3;padding:4px 7px;background:#08080ae8;border:1px solid #b58c58;color:#d8c19c;font-size:10px}@media(max-width:640px){.killer-info-rail{width:34px}.killer-info-rail button{min-height:86px;font-size:11px}.killer-info-panel{right:34px;width:calc(100vw - 48px)}}
+    /* Realistic residential floorplan pass: irregular room footprints, restrained lighting */
+    .house-map-viewport{background:#090c0c!important;border-color:rgba(177,181,174,.22)!important}
+    .house-room-hotspot{border-radius:1px!important;padding:3px!important;color:#e0dfd8!important;background-clip:padding-box;text-shadow:0 2px 5px #000,0 0 9px #000}
+    .house-room-hotspot:hover{filter:brightness(1.16)!important;background-color:rgba(173,169,151,.12)!important;border-color:#c1b9a6!important;box-shadow:inset 0 0 18px rgba(205,198,177,.1),0 0 12px rgba(0,0,0,.45)!important}
+    .house-room-label{font-family:Inter,Arial,sans-serif;font-size:clamp(8px,.78vw,11px)!important;letter-spacing:.08em!important;background:rgba(8,10,10,.76)!important;border:1px solid rgba(185,187,177,.22)!important;color:#d9d8d0!important}
+    .house-state-tag{font-family:Inter,Arial,sans-serif!important;background:rgba(12,15,15,.9)!important;border-color:rgba(168,169,158,.28)!important;color:#c5c7bf!important}
+    .house-state-tag.dark{color:#aeb7bb!important;border-color:rgba(117,137,145,.28)!important}
+    .house-state-tag.danger{color:#d4a5a3!important;border-color:rgba(143,70,70,.36)!important}
+    .house-killer-marker{background:rgba(80,25,28,.92)!important;border-color:#9d5555!important;box-shadow:0 0 12px rgba(100,35,38,.28)!important}
+    .house-map-caption,.house-vision-note{background:rgba(7,10,11,.88)!important;border-color:rgba(156,160,151,.28)!important;color:#b9bbb2!important}
+    @keyframes moonlightDrift{0%,100%{opacity:.34}50%{opacity:.52}}
+    #mapGrid:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at 24% 12%,rgba(177,193,199,.10),transparent 34%),linear-gradient(135deg,rgba(210,215,207,.025),transparent 48%,rgba(0,0,0,.16));animation:moonlightDrift 9s ease-in-out infinite}
+    #mapGrid .house-room-hotspot{z-index:2}
+    #mapGrid .house-map-caption,#mapGrid .house-vision-note{z-index:5}
+    @media(prefers-reduced-motion:reduce){#mapGrid:after{animation:none}}
+</style>
 </head>
 <body class="antialiased selection:bg-red-700 selection:text-white">
   <!-- 全屏血光 / 警报 / 闪光反馈层 -->
@@ -2169,104 +2185,150 @@
       const grid = document.getElementById('mapGrid');
       grid.innerHTML = '';
       const palettes = {
-        haddonfield: { floor: '#40352c', wall: '#a99a83', yard: '#20251f', corridor: '#b8a88d' },
-        farmhouse: { floor: '#4a392a', wall: '#a68e70', yard: '#202017', corridor: '#b69a75' },
-        motel: { floor: '#3c3b38', wall: '#aaa49a', yard: '#1c2429', corridor: '#b4aaa0' },
-        workshop: { floor: '#3b403c', wall: '#96958b', yard: '#1b211e', corridor: '#aaa18d' }
+        haddonfield: { floor: '#55534d', wall: '#b4b0a5', yard: '#252a28', corridor: '#77766f' },
+        farmhouse: { floor: '#51483d', wall: '#a99a84', yard: '#242722', corridor: '#70685b' },
+        motel: { floor: '#555958', wall: '#b0b3ae', yard: '#252b2e', corridor: '#777e7c' },
+        workshop: { floor: '#4a504d', wall: '#a3a49b', yard: '#222826', corridor: '#6d7470' }
       };
       const palette = palettes[s.mapSkin] || palettes.haddonfield;
       const mapColumns = 6, mapRows = 6;
-      const cellW = 250, cellH = 175, gapX = 34, gapY = 32, pad = 42;
-      const width = pad * 2 + mapColumns * cellW + (mapColumns - 1) * gapX;
-      const height = pad * 2 + mapRows * cellH + (mapRows - 1) * gapY;
+      const pitchX = 252, pitchY = 188, pad = 58, cellW = 206, cellH = 142;
+      const width = pad * 2 + mapColumns * pitchX - (pitchX - cellW);
+      const height = pad * 2 + mapRows * pitchY - (pitchY - cellH);
       const rooms = Object.values(s.rooms);
       const roomAt = {};
       rooms.forEach(room => { roomAt[room.row + ',' + room.col] = room; });
-      const center = room => ({ x: pad + room.col * (cellW + gapX) + cellW / 2, y: pad + room.row * (cellH + gapY) + cellH / 2 });
+
+      // 房间仍沿用原有拓扑坐标，保证移动、AI和寻路规则不变；
+      // 仅改变视觉几何：大客厅/公共空间更宽，小型功能间更紧凑。
+      const sizeFor = room => {
+        const id = room.id;
+        if (['living_room','backyard','pool','greenhouse'].includes(id)) return { w: 1.00, h: 1.00 };
+        if (['dining_room','kitchen','garage','workshop','neighbor_living','master_bed'].includes(id)) return { w: .91, h: .88 };
+        if (['hallway','neighbor_hall','side_yard','fence_path','driveway','street'].includes(id)) return { w: .72, h: .58 };
+        if (['bathroom','storage','laundry','boiler_room','cellar','security_room','shed'].includes(id)) return { w: .62, h: .64 };
+        if (['porch','front_yard','patio','back_gate','neighbor_porch'].includes(id)) return { w: .78, h: .72 };
+        return { w: .82, h: .78 };
+      };
+      const geometry = {};
+      rooms.forEach(room => {
+        const scale = sizeFor(room);
+        const w = cellW * scale.w, h = cellH * scale.h;
+        geometry[room.id] = {
+          x: pad + room.col * pitchX + (cellW - w) / 2,
+          y: pad + room.row * pitchY + (cellH - h) / 2,
+          w, h
+        };
+      });
+      const center = room => {
+        const g = geometry[room.id];
+        return { x:g.x+g.w/2, y:g.y+g.h/2 };
+      };
       const links = [];
       rooms.forEach(room => {
         [[0,1],[1,0]].forEach(offset => {
-          const other = roomAt[(room.row + offset[0]) + ',' + (room.col + offset[1])];
+          const other = roomAt[(room.row+offset[0])+','+(room.col+offset[1])];
           if (!other) return;
-          const p1 = center(room), p2 = center(other);
-          links.push('<path d="M' + p1.x + ' ' + p1.y + ' L' + p2.x + ' ' + p2.y + '" stroke="' + palette.corridor + '" stroke-width="54" stroke-linecap="square" opacity=".92"/>');
-          links.push('<path d="M' + p1.x + ' ' + p1.y + ' L' + p2.x + ' ' + p2.y + '" stroke="#171513" stroke-width="4" stroke-dasharray="8 9" opacity=".55"/>');
+          const a=geometry[room.id], b=geometry[other.id];
+          let d;
+          if (offset[1]) {
+            const y=(center(room).y+center(other).y)/2;
+            d='M'+(a.x+a.w)+' '+y+' L'+b.x+' '+y;
+          } else {
+            const x=(center(room).x+center(other).x)/2;
+            d='M'+x+' '+(a.y+a.h)+' L'+x+' '+b.y;
+          }
+          links.push('<path d="'+d+'" stroke="#101211" stroke-width="54" stroke-linecap="square"/>');
+          links.push('<path d="'+d+'" stroke="'+palette.corridor+'" stroke-width="39" stroke-linecap="square"/>');
+          links.push('<path d="'+d+'" stroke="#c1b9a7" stroke-width="1.5" stroke-dasharray="3 9" opacity=".24"/>');
         });
       });
       const roomShapes = rooms.map(room => {
-        const x = pad + room.col * (cellW + gapX), y = pad + room.row * (cellH + gapY);
-        const floor = room.defaultDark ? '#29231f' : palette.floor;
-        const planks = Array.from({length:7},(_,i)=>'<path d="M'+(x+13)+' '+(y+24+i*19)+'h'+(cellW-26)+'" stroke="#120f0d" stroke-width="2" opacity=".34"/>').join('');
-        const grain = Array.from({length:18},(_,i)=>'<path d="M'+(x+18+(i%6)*38)+' '+(y+30+Math.floor(i/6)*45)+'h'+(18+(i%4)*7)+'" stroke="#d0ae7d" stroke-width="1" opacity=".12"/>').join('');
-        let furniture = '';
-        if (['master_bed','guest_room','nursery'].includes(room.id)) furniture = '<g filter="url(#shadow)"><rect x="'+(x+62)+'" y="'+(y+42)+'" width="126" height="92" rx="5" fill="#211a17" stroke="#0a0808" stroke-width="7"/><rect x="'+(x+66)+'" y="'+(y+38)+'" width="118" height="88" rx="4" fill="#655044" stroke="#b08b67" stroke-width="4"/><rect x="'+(x+72)+'" y="'+(y+45)+'" width="47" height="31" rx="4" fill="#c1b39b"/><rect x="'+(x+124)+'" y="'+(y+45)+'" width="52" height="31" rx="4" fill="#a9977f"/><path d="M'+(x+69)+' '+(y+84)+'h112" stroke="#2a211d" stroke-width="5"/></g>';
-        else if (['living_room','dining_room'].includes(room.id)) furniture = '<g filter="url(#shadow)"><rect x="'+(x+55)+'" y="'+(y+50)+'" width="140" height="73" rx="14" fill="#29201b" stroke="#090707" stroke-width="7"/><rect x="'+(x+60)+'" y="'+(y+45)+'" width="130" height="67" rx="12" fill="#76604c" stroke="#b49a79" stroke-width="4"/><path d="M'+(x+74)+' '+(y+56)+'h100M'+(x+74)+' '+(y+98)+'h100" stroke="#382b23" stroke-width="5"/></g>';
-        else if (['kitchen','laundry'].includes(room.id)) furniture = '<g filter="url(#shadow)"><rect x="'+(x+22)+'" y="'+(y+35)+'" width="202" height="31" fill="#77746d" stroke="#242322" stroke-width="5"/><path d="M'+(x+27)+' '+(y+51)+'h192" stroke="#d2c8b6" stroke-width="2" opacity=".45"/><rect x="'+(x+34)+'" y="'+(y+80)+'" width="62" height="53" rx="4" fill="#565b59" stroke="#171b1a" stroke-width="5"/><circle cx="'+(x+65)+'" cy="'+(y+106)+'" r="19" fill="#929894" stroke="#2a302e" stroke-width="5"/><rect x="'+(x+145)+'" y="'+(y+83)+'" width="65" height="48" fill="#8b8273" stroke="#292724" stroke-width="4"/></g>';
-        else if (room.id === 'bathroom') furniture = '<g filter="url(#shadow)"><rect x="'+(x+24)+'" y="'+(y+32)+'" width="86" height="93" rx="12" fill="#9da6a3" stroke="#303938" stroke-width="6"/><path d="M'+(x+34)+' '+(y+44)+'h66v67h-66z" fill="#657878" opacity=".55"/><ellipse cx="'+(x+170)+'" cy="'+(y+91)+'" rx="34" ry="27" fill="#b8c0bc" stroke="#333b3a" stroke-width="6"/><ellipse cx="'+(x+170)+'" cy="'+(y+91)+'" rx="18" ry="13" fill="#626f6d"/></g>';
-        else furniture = '<g filter="url(#shadow)"><rect x="'+(x+72)+'" y="'+(y+56)+'" width="106" height="58" rx="4" fill="#554536" stroke="#b0926d" stroke-width="5"/><path d="M'+(x+80)+' '+(y+84)+'h90" stroke="#c6a77e" stroke-width="3" opacity=".5"/></g>';
-        const windowMark = room.hasWindow ? '<g><rect x="'+(x+cellW*.38)+'" y="'+(y-7)+'" width="'+(cellW*.24)+'" height="13" fill="#8eabb2" stroke="#d1d9d5" stroke-width="3"/><path d="M'+(x+cellW*.5)+' '+(y-5)+'v10" stroke="#283b42" stroke-width="3"/></g>' : '';
-        const doorMark = '<g><rect x="'+(x+cellW*.43)+'" y="'+(y+cellH-10)+'" width="'+(cellW*.14)+'" height="17" fill="#5b3b28" stroke="#b28b60" stroke-width="3"/><circle cx="'+(x+cellW*.55)+'" cy="'+(y+cellH-3)+'" r="2.5" fill="#d4b47c"/></g>';
-        return '<g><rect x="'+(x+9)+'" y="'+(y+11)+'" width="'+cellW+'" height="'+cellH+'" fill="#000" opacity=".42"/><rect x="'+x+'" y="'+y+'" width="'+cellW+'" height="'+cellH+'" rx="2" fill="#11100f" stroke="#171310" stroke-width="16"/><rect x="'+(x+8)+'" y="'+(y+8)+'" width="'+(cellW-16)+'" height="'+(cellH-16)+'" fill="'+floor+'" stroke="'+palette.wall+'" stroke-width="5"/><rect x="'+(x+13)+'" y="'+(y+13)+'" width="'+(cellW-26)+'" height="'+(cellH-26)+'" fill="none" stroke="#17110d" stroke-width="2"/>'+planks+grain+furniture+windowMark+doorMark+'</g>';
+        const g=geometry[room.id],x=g.x,y=g.y,w=g.w,h=g.h;
+        const isOutside=['front_yard','backyard','side_yard','driveway','street','back_gate','patio','pool','neighbor_porch','fence_path'].includes(room.id);
+        const isTile=['bathroom','kitchen','laundry','boiler_room'].includes(room.id);
+        const floor=room.dark?'#292d2d':(isOutside?'#343a35':(isTile?'#555a57':palette.floor));
+        const texture=isOutside
+          ? '<path d="M'+(x+12)+' '+(y+h*.25)+'l24 -8m30 42l31 -10m-5 48l28 -9m38 -22l25 -8" stroke="#a3a696" stroke-width="2" opacity=".14"/>'
+          : (isTile
+            ? Array.from({length:Math.max(2,Math.floor(w/42))},(_,i)=>'<path d="M'+(x+12+i*42)+' '+(y+9)+'v'+(h-18)+'" stroke="#171b1a" stroke-width="1" opacity=".42"/>').join('')+Array.from({length:Math.max(2,Math.floor(h/36))},(_,i)=>'<path d="M'+(x+9)+' '+(y+12+i*36)+'h'+(w-18)+'" stroke="#171b1a" stroke-width="1" opacity=".42"/>').join('')
+            : Array.from({length:Math.max(3,Math.floor(h/23))},(_,i)=>'<path d="M'+(x+9)+' '+(y+18+i*23)+'h'+(w-18)+'" stroke="#17110e" stroke-width="2" opacity=".28"/>').join(''));
+        let furniture='';
+        if (['master_bed','guest_room','nursery','neighbor_bed'].includes(room.id)) {
+          furniture='<g><rect x="'+(x+w*.22)+'" y="'+(y+h*.23)+'" width="'+(w*.56)+'" height="'+(h*.54)+'" fill="#282725" stroke="#111312" stroke-width="7"/><rect x="'+(x+w*.24)+'" y="'+(y+h*.22)+'" width="'+(w*.52)+'" height="'+(h*.49)+'" fill="#77766f" stroke="#b2ada0" stroke-width="3"/><path d="M'+(x+w*.25)+' '+(y+h*.48)+'h'+(w*.5)+'" stroke="#373a38" stroke-width="5"/></g>';
+        } else if (['living_room','dining_room','neighbor_living'].includes(room.id)) {
+          furniture='<g><rect x="'+(x+w*.2)+'" y="'+(y+h*.29)+'" width="'+(w*.6)+'" height="'+(h*.42)+'" rx="5" fill="#353633" stroke="#171918" stroke-width="7"/><rect x="'+(x+w*.23)+'" y="'+(y+h*.32)+'" width="'+(w*.54)+'" height="'+(h*.36)+'" rx="3" fill="#77746c" stroke="#aaa69b" stroke-width="2"/></g>';
+        } else if (['kitchen','laundry','workshop','garage'].includes(room.id)) {
+          furniture='<g><rect x="'+(x+w*.1)+'" y="'+(y+h*.18)+'" width="'+(w*.8)+'" height="'+(h*.17)+'" fill="#777b78" stroke="#222624" stroke-width="4"/><rect x="'+(x+w*.18)+'" y="'+(y+h*.53)+'" width="'+(w*.25)+'" height="'+(h*.27)+'" fill="#484e4b" stroke="#191d1b" stroke-width="4"/><rect x="'+(x+w*.58)+'" y="'+(y+h*.52)+'" width="'+(w*.24)+'" height="'+(h*.28)+'" fill="#77766f" stroke="#292d2b" stroke-width="4"/></g>';
+        } else if (room.id==='bathroom') {
+          furniture='<g><rect x="'+(x+w*.12)+'" y="'+(y+h*.18)+'" width="'+(w*.36)+'" height="'+(h*.62)+'" rx="8" fill="#a3aaa6" stroke="#333a38" stroke-width="5"/><ellipse cx="'+(x+w*.72)+'" cy="'+(y+h*.55)+'" rx="'+(w*.17)+'" ry="'+(h*.16)+'" fill="#b8bfba" stroke="#333a38" stroke-width="5"/></g>';
+        } else {
+          furniture='<g><rect x="'+(x+w*.28)+'" y="'+(y+h*.32)+'" width="'+(w*.44)+'" height="'+(h*.34)+'" fill="#555650" stroke="#252725" stroke-width="5"/><path d="M'+(x+w*.32)+' '+(y+h*.49)+'h'+(w*.36)+'" stroke="#a4a093" stroke-width="2" opacity=".35"/></g>';
+        }
+        const windowMark=room.hasWindow?'<rect x="'+(x+w*.38)+'" y="'+(y-5)+'" width="'+(w*.24)+'" height="10" fill="#9ca9a8" stroke="#d0d3ca" stroke-width="2"/><path d="M'+(x+w*.5)+' '+(y-4)+'v8" stroke="#384343" stroke-width="2"/>':'';
+        const light=room.dark?'':'<ellipse cx="'+(x+w*.5)+'" cy="'+(y+h*.42)+'" rx="'+(w*.43)+'" ry="'+(h*.39)+'" fill="#c4c0a8" opacity=".055"/>';
+        return '<g><rect x="'+(x+7)+'" y="'+(y+9)+'" width="'+w+'" height="'+h+'" fill="#000" opacity=".55"/><rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="#111413" stroke="#0a0c0c" stroke-width="12"/><rect x="'+(x+6)+'" y="'+(y+6)+'" width="'+(w-12)+'" height="'+(h-12)+'" fill="'+floor+'" stroke="'+palette.wall+'" stroke-width="4"/>'+texture+furniture+windowMark+light+'</g>';
       });
-      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '"><defs><filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><radialGradient id="vignette"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".58"/></radialGradient><pattern id="yardgrain" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M0 8h12M18 24h10M6 31h6" stroke="#9aa18a" stroke-opacity=".13" stroke-width="2"/></pattern></defs><rect width="100%" height="100%" fill="' + palette.yard + '"/><rect width="100%" height="100%" fill="url(#yardgrain)"/>' + links.join('') + roomShapes.join('') + '<rect width="100%" height="100%" fill="url(#vignette)"/><rect x="2" y="2" width="' + (width-4) + '" height="' + (height-4) + '" fill="none" stroke="' + palette.wall + '" stroke-opacity=".35" stroke-width="4"/></svg>';
-      grid.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")';
-      grid.style.backgroundSize = '100% 100%';
-      grid.style.backgroundPosition = 'center';
-      grid.style.backgroundRepeat = 'no-repeat';
-      grid.style.position = 'relative';
-      grid.style.width = '100%';
-      grid.style.minWidth = '1180px';
-      grid.style.aspectRatio = width + ' / ' + height;
-      grid.style.minHeight = '760px';
-      grid.style.maxHeight = 'none';
-      grid.style.border = '1px solid rgba(190,176,150,.42)';
-      grid.style.borderRadius = '5px';
-      grid.style.overflow = 'hidden';
-      grid.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.45),0 18px 42px rgba(0,0,0,.45)';
-      const adjIds = getAdjacentRooms(s.killerRoom);
-      const losIds = getLineOfSightRooms(s, s.killerRoom);
-      const explored = new Set([...(s.exploredRooms || []), ...losIds]);
-      const selectedCard = s.hand.find(c => c.uid === s.selectedCardUid);
-      rooms.forEach(room => {
-        const x = pad + room.col * (cellW + gapX), y = pad + room.row * (cellH + gapY);
-        const isKillerHere = s.killerRoom === room.id;
-        const isAdj = adjIds.includes(room.id);
-        const inLos = losIds.includes(room.id);
-        const isExplored = explored.has(room.id);
-        const roomResidents = s.residents.filter(r => r.alive && r.roomId === room.id && !r.hidden && inLos);
-        const hiddenCount = s.residents.filter(r => r.alive && r.roomId === room.id && r.hidden).length;
-        const hotspot = document.createElement('button');
-        hotspot.type = 'button';
-        hotspot.className = 'house-room-hotspot';
-        hotspot.style.left = (x / width * 100) + '%';
-        hotspot.style.top = (y / height * 100) + '%';
-        hotspot.style.width = (cellW / width * 100) + '%';
-        hotspot.style.height = (cellH / height * 100) + '%';
-        hotspot.style.borderColor = isKillerHere ? '#d34a50' : (!isExplored ? 'rgba(105,115,122,.22)' : (selectedCard ? '#d2ad71' : (inLos && roomResidents.length ? '#b94d54' : (isAdj ? '#c6a06b' : 'rgba(0,0,0,0)'))));
-        hotspot.style.background = !isExplored ? 'rgba(5,8,12,.88)' : (isKillerHere ? 'linear-gradient(135deg,rgba(119,22,29,.46),rgba(10,8,9,.12))' : (selectedCard ? 'rgba(184,139,75,.14)' : (inLos && roomResidents.length ? 'rgba(135,25,35,.2)' : 'rgba(4,7,9,.12)')));
-        hotspot.style.boxShadow = isKillerHere ? 'inset 0 0 28px rgba(205,48,58,.36)' : (isAdj ? 'inset 0 0 18px rgba(196,151,91,.16)' : 'none');
-        hotspot.innerHTML = (isExplored ? '<span class="house-room-label">' + room.name + '</span>' : '<span class="house-room-label">？？？</span>') +
-          (isKillerHere ? '<span class="house-killer-marker">🔪 迈尔斯</span>' : '') +
-          (isExplored && room.isExit ? '<span class="house-state-tag">出口</span>' : '') +
-          (isExplored && room.locked ? '<span class="house-state-tag locked">🔒 锁门</span>' : '') +
-          (isExplored && room.dark ? '<span class="house-state-tag dark">黑暗</span>' : '') +
-          (isExplored && room.horrificScene ? '<span class="house-state-tag danger">血迹</span>' : '') +
-          (isExplored && room.barricadedTurns > 0 ? '<span class="house-state-tag danger">障碍 ' + room.barricadedTurns + '</span>' : '') +
-          (isExplored && room.hidingSpotType ? '<span class="house-state-tag">藏身点</span>' : '') +
-          (roomResidents.length ? '<span class="house-residents">' + roomResidents.map(r => '<i title="' + r.name + '">' + r.icon + '</i>').join('') + '</span>' : '') +
-          (isKillerHere && hiddenCount ? '<span class="house-state-tag danger">藏匿者 ' + hiddenCount + '</span>' : '') +
-          (!isExplored ? '<span class="house-state-tag dark">未探索</span>' : '');
-        hotspot.setAttribute('aria-label', room.name + (isKillerHere ? '，迈尔斯所在' : ''));
-        hotspot.onclick = () => handleRoomClick(room.id);
+      const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+width+' '+height+'"><defs><radialGradient id="nightWash"><stop offset="0" stop-color="#d3d6d0" stop-opacity=".07"/><stop offset="1" stop-color="#050707" stop-opacity=".42"/></radialGradient><pattern id="groundNoise" width="38" height="38" patternUnits="userSpaceOnUse"><path d="M3 9h10m12 17h8M8 33h5" stroke="#c0c2b8" stroke-opacity=".08" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="'+palette.yard+'"/><rect width="100%" height="100%" fill="url(#groundNoise)"/>'+links.join('')+roomShapes.join('')+'<rect width="100%" height="100%" fill="url(#nightWash)"/><rect x="2" y="2" width="'+(width-4)+'" height="'+(height-4)+'" fill="none" stroke="'+palette.wall+'" stroke-opacity=".32" stroke-width="4"/></svg>';
+      grid.style.backgroundImage='url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)+'")';
+      grid.style.backgroundSize='100% 100%';
+      grid.style.backgroundPosition='center';
+      grid.style.backgroundRepeat='no-repeat';
+      grid.style.position='relative';
+      grid.style.width='100%';
+      grid.style.minWidth='1180px';
+      grid.style.aspectRatio=width+' / '+height;
+      grid.style.minHeight='760px';
+      grid.style.maxHeight='none';
+      grid.style.border='1px solid rgba(190,190,180,.34)';
+      grid.style.borderRadius='3px';
+      grid.style.overflow='hidden';
+      grid.style.boxShadow='inset 0 0 90px rgba(0,0,0,.48),0 18px 42px rgba(0,0,0,.45)';
+
+      const adjIds=getAdjacentRooms(s.killerRoom);
+      const losIds=getLineOfSightRooms(s,s.killerRoom);
+      const explored=new Set([...(s.exploredRooms||[]),...losIds]);
+      const selectedCard=s.hand.find(c=>c.uid===s.selectedCardUid);
+      rooms.forEach(room=>{
+        const g=geometry[room.id];
+        const isKillerHere=s.killerRoom===room.id;
+        const isAdj=adjIds.includes(room.id);
+        const inLos=losIds.includes(room.id);
+        const isExplored=explored.has(room.id);
+        const roomResidents=s.residents.filter(r=>r.alive&&r.roomId===room.id&&!r.hidden&&inLos);
+        const hiddenCount=s.residents.filter(r=>r.alive&&r.roomId===room.id&&r.hidden).length;
+        const hotspot=document.createElement('button');
+        hotspot.type='button';
+        hotspot.className='house-room-hotspot';
+        hotspot.style.left=(g.x/width*100)+'%';
+        hotspot.style.top=(g.y/height*100)+'%';
+        hotspot.style.width=(g.w/width*100)+'%';
+        hotspot.style.height=(g.h/height*100)+'%';
+        hotspot.style.borderColor=isKillerHere?'#a34d50':(!isExplored?'rgba(105,115,122,.18)':(selectedCard?'#b7a98e':(inLos&&roomResidents.length?'#a34d50':(isAdj?'#aaa18e':'rgba(0,0,0,0)'))));
+        hotspot.style.background=!isExplored?'rgba(5,8,10,.82)':(isKillerHere?'rgba(106,35,39,.24)':(selectedCard?'rgba(180,165,135,.1)':(inLos&&roomResidents.length?'rgba(110,35,38,.16)':'rgba(4,7,9,.08)')));
+        hotspot.style.boxShadow=isKillerHere?'inset 0 0 26px rgba(150,45,48,.24)':(isAdj?'inset 0 0 15px rgba(180,170,145,.08)':'none');
+        hotspot.innerHTML=(isExplored?'<span class="house-room-label">'+room.name+'</span>':'<span class="house-room-label">？？？</span>')+
+          (isKillerHere?'<span class="house-killer-marker">迈尔斯</span>':'')+
+          (isExplored&&room.isExit?'<span class="house-state-tag">出口</span>':'')+
+          (isExplored&&room.locked?'<span class="house-state-tag locked">锁门</span>':'')+
+          (isExplored&&room.dark?'<span class="house-state-tag dark">黑暗</span>':'')+
+          (isExplored&&room.horrificScene?'<span class="house-state-tag danger">血迹</span>':'')+
+          (isExplored&&room.barricadedTurns>0?'<span class="house-state-tag danger">障碍 '+room.barricadedTurns+'</span>':'')+
+          (isExplored&&room.hidingSpotType?'<span class="house-state-tag">藏身点</span>':'')+
+          (roomResidents.length?'<span class="house-residents">'+roomResidents.map(r=>'<i title="'+r.name+'">'+r.icon+'</i>').join('')+'</span>':'')+
+          (isKillerHere&&hiddenCount?'<span class="house-state-tag danger">藏匿者 '+hiddenCount+'</span>':'')+
+          (!isExplored?'<span class="house-state-tag dark">未探索</span>':'');
+        hotspot.setAttribute('aria-label',room.name+(isKillerHere?'，迈尔斯所在':''));
+        hotspot.onclick=()=>handleRoomClick(room.id);
         grid.appendChild(hotspot);
       });
-      const caption = document.createElement('div');
-      caption.className = 'house-map-caption';
-      caption.textContent = 'HADDONFIELD DISTRICT · ' + (s.exploredRooms || []).length + '/' + rooms.length + ' AREAS EXPLORED · WAR FOG';
+      const caption=document.createElement('div');
+      caption.className='house-map-caption';
+      caption.textContent='HADDONFIELD DISTRICT · '+(s.exploredRooms||[]).length+'/'+rooms.length+' AREAS EXPLORED · WAR FOG';
       grid.appendChild(caption);
-      const visionNote = document.createElement('div');
-      visionNote.className = 'house-vision-note';
-      visionNote.textContent = '视野：当前房间 + 未被黑暗、锁门或障碍阻断的直接相邻房间；远处仅保留已探索记忆。';
+      const visionNote=document.createElement('div');
+      visionNote.className='house-vision-note';
+      visionNote.textContent='视野：当前房间 + 未被黑暗、锁门或障碍阻断的直接相邻房间；远处仅保留已探索记忆。';
       grid.appendChild(visionNote);
     }
     function renderRoster() {
