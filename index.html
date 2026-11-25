@@ -2329,7 +2329,10 @@
           selectCard(card.uid);
         };
 
-        const spriteIndex = Number.isInteger(card.perkSpriteIndex) ? card.perkSpriteIndex : (s.hand.indexOf(card) % 168);
+        const templateSpriteIndex = (CARD_TEMPLATES_MYERS || []).findIndex(template => template.id === card.id);
+        const spriteIndex = Number.isInteger(card.perkSpriteIndex)
+          ? Math.max(0, Math.min(167, card.perkSpriteIndex))
+          : (templateSpriteIndex >= 0 ? templateSpriteIndex : 0);
         const spriteCol = spriteIndex % 24;
         const spriteRow = Math.floor(spriteIndex / 24);
         const spriteX = (spriteCol / 23) * 100;
