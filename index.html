@@ -1261,6 +1261,12 @@
       if (idx === -1) return;
       const card = gameState.hand[idx];
 
+      // 目标刚受伤时必须先经过 NPC 阶段的逃跑反应，防止用攻击卡在同一回合连击。
+      if (ctx?.resident?.reactionPending && ctx.resident.lastDamagedTurn === gameState.turn) {
+        logEvent(`【${ctx.resident.name}】刚刚受伤，必须先获得逃跑反应，暂时无法再次成为攻击目标！`, 'warn');
+        return;
+      }
+
       if (gameState.ap < card.cost) {
         logEvent(`行动力不足，无法打出【${card.name}】。`, 'warn');
         return;
