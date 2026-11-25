@@ -1560,6 +1560,17 @@
         const nearbyThreat = getLineOfSightRooms(gameState, r.roomId).includes(gameState.killerRoom) ||
           (gameState.lastNoise && roomDistanceWithin(r.roomId, gameState.lastNoise.roomId, 1) <= 1);
 
+        // 受伤后的强制反应优先级最高：先逃跑，不能被躲藏、治疗或报警抢占。
+        if (r.healthState === 'injured' && r.reactionPending) {
+          const choice = findNearestReachableExit(r.roomId);
+          const step = choice?.path?.[1] || null;
+          if (step && !gameState.rooms[step].locked) {
+            r.roomId = step; r.escapeProgress = 0;
+            logEvent(`🏃【${r.name}】受伤后立即逃跑至【${gameState.rooms[step].name}】！`, 'alert');
+          }
+          r.reactionPending = false; r.fleeing = true; r.actedThisTurn = true; return;
+        }
+
         // 已抵达出口的幸存者需要完成准备进度；杀手进入同一房间即可打断。
         if (gameState.rooms[r.roomId]?.isExit) {
           if (r.roomId === gameState.killerRoom) {
@@ -1630,17 +1641,6 @@
           }
           r.actedThisTurn = true;
           return;
-        }
-
-        // 受伤后的强制反应优先级最高：先逃跑，不能被躲藏、治疗或报警抢占。
-        if (r.healthState === 'injured' && r.reactionPending) {
-          const choice = findNearestReachableExit(r.roomId);
-          const step = choice?.path?.[1] || null;
-          if (step && !gameState.rooms[step].locked) {
-            r.roomId = step; r.escapeProgress = 0;
-            logEvent(`🏃【${r.name}】受伤后立即逃跑至【${gameState.rooms[step].name}】！`, 'alert');
-          }
-          r.reactionPending = false; r.fleeing = true; r.actedThisTurn = true; return;
         }
 
         // 同房间健康幸存者可治疗受伤者，或救援倒地者；杀手在场时不冒险。
