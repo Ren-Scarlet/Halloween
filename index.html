@@ -273,6 +273,7 @@
 
 
     /* TOP-DOWN HOUSE MAP */
+    .house-map-viewport { width:100%;max-height:82vh;overflow:auto;border:1px solid rgba(190,176,150,.18);background:#080a0b;scrollbar-color:#665447 #101114; }
     .house-tactical-map { isolation:isolate; }
     .house-room-hotspot { position:absolute;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px;border:2px solid transparent;border-radius:3px;color:#f0e8d8;text-shadow:0 2px 5px #000,0 0 10px #000;cursor:pointer;transition:background .16s,border-color .16s,filter .16s;overflow:hidden; }
     .house-room-hotspot:hover { z-index:4;filter:brightness(1.35);background:rgba(171,126,76,.3)!important;border-color:#d6b37b!important; }
@@ -486,8 +487,14 @@
           </div>
         </div>
 
-        <!-- 单张连续房屋平面图，房间热区仍可点击 -->
-        <div id="mapGrid" class="house-tactical-map"></div>
+        <!-- 住宅区大地图：窄屏可横向滚动，保留完整房间点击区域 -->
+        <div id="mapViewport" class="house-map-viewport">
+          <div id="mapGrid" class="house-tactical-map"></div>
+        </div>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-500">
+          <span>住宅区规模：6 × 6 · 36 个区域 · 每局随机布局</span>
+          <span>幸存者分散生成，远离杀手初始位置</span>
+        </div>
       </section>
 
       <!-- 右侧 4 列：居民与目标状态 + 实时战斗日志 -->
@@ -921,15 +928,15 @@
     ];
 
     // --------------------------------------------------------------------------
-    // 3. 3x3 哈登菲尔德房屋与庭院地图
+    // 3. 6x6 哈登菲尔德住宅区地图：36 个连续可达房间
     // --------------------------------------------------------------------------
     const MAP_ROOMS_TEMPLATE = [
       { id: 'balcony', name: '阳台/屋顶', tag: '高处俯瞰', isExit: false, defaultDark: false },
       { id: 'master_bed', name: '主卧（带窗）', tag: '临窗卧室', isExit: false, defaultDark: false },
       { id: 'bathroom', name: '浴室', tag: '密闭空间', isExit: false, defaultDark: true },
-      { id: 'hallway', name: '走廊（枢纽）', tag: '中心走廊', isExit: false, defaultDark: false },
+      { id: 'hallway', name: '主走廊', tag: '住宅枢纽', isExit: false, defaultDark: false },
       { id: 'living_room', name: '客厅（大窗）', tag: '临窗大厅', isExit: false, defaultDark: false },
-      { id: 'kitchen', name: '厨房', tag: '逃生出口', isExit: true, defaultDark: false },
+      { id: 'kitchen', name: '厨房', tag: '室内逃生出口', isExit: true, defaultDark: false },
       { id: 'basement', name: '地下室', tag: '幽暗死角', isExit: false, defaultDark: true },
       { id: 'front_yard', name: '前院灌木', tag: '阴影起点', isExit: false, defaultDark: true },
       { id: 'garage', name: '车库', tag: '逃生出口', isExit: true, defaultDark: false },
@@ -939,16 +946,45 @@
       { id: 'laundry', name: '洗衣房', tag: '杂物间', isExit: false, defaultDark: true },
       { id: 'storage', name: '储藏室', tag: '幽暗死角', isExit: false, defaultDark: true },
       { id: 'nursery', name: '儿童房', tag: '安静房间', isExit: false, defaultDark: false },
-      { id: 'porch', name: '门廊', tag: '屋外入口', isExit: true, defaultDark: false }
+      { id: 'porch', name: '门廊', tag: '屋外入口', isExit: true, defaultDark: false },
+      { id: 'attic', name: '阁楼', tag: '低矮暗室', isExit: false, defaultDark: true },
+      { id: 'boiler_room', name: '锅炉房', tag: '设备间', isExit: false, defaultDark: true },
+      { id: 'cellar', name: '酒窖', tag: '地下储藏', isExit: false, defaultDark: true },
+      { id: 'security_room', name: '监控室', tag: '安保设施', isExit: false, defaultDark: false },
+      { id: 'workshop', name: '维修工坊', tag: '工具与武器', isExit: false, defaultDark: false },
+      { id: 'shed', name: '庭院工具棚', tag: '户外储物', isExit: false, defaultDark: true },
+      { id: 'greenhouse', name: '玻璃温室', tag: '视野开阔', isExit: false, defaultDark: false },
+      { id: 'backyard', name: '后院草坪', tag: '灌木与树影', isExit: false, defaultDark: true },
+      { id: 'side_yard', name: '侧院小径', tag: '狭窄通道', isExit: false, defaultDark: true },
+      { id: 'driveway', name: '车道', tag: '车辆停放区', isExit: false, defaultDark: false },
+      { id: 'street', name: '街道边缘', tag: '远端道路', isExit: true, defaultDark: false },
+      { id: 'back_gate', name: '后院铁门', tag: '外围出口', isExit: true, defaultDark: false },
+      { id: 'patio', name: '后院露台', tag: '户外休息区', isExit: false, defaultDark: false },
+      { id: 'pool', name: '废弃泳池', tag: '开阔危险区', isExit: false, defaultDark: false },
+      { id: 'neighbor_porch', name: '邻宅门廊', tag: '邻居住宅', isExit: false, defaultDark: false },
+      { id: 'neighbor_hall', name: '邻宅走廊', tag: '邻宅内部', isExit: false, defaultDark: true },
+      { id: 'neighbor_living', name: '邻宅客厅', tag: '邻宅起居区', isExit: false, defaultDark: false },
+      { id: 'neighbor_kitchen', name: '邻宅厨房', tag: '邻宅设施', isExit: false, defaultDark: false },
+      { id: 'neighbor_bed', name: '邻宅卧室', tag: '邻宅卧室', isExit: false, defaultDark: true },
+      { id: 'fence_path', name: '围栏小道', tag: '住宅区边界', isExit: false, defaultDark: true }
     ];
 
     function generateHouseLayout() {
       const cells = [];
-      for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) cells.push({ row, col });
+      for (let row = 0; row < 6; row++) for (let col = 0; col < 6; col++) cells.push({ row, col });
       const shuffledCells = shuffleArray(cells);
-      return MAP_ROOMS_TEMPLATE.map((room, index) => ({ ...room, row: shuffledCells[index].row, col: shuffledCells[index].col,
-        hasWindow: ['master_bed', 'living_room', 'guest_room', 'balcony', 'porch'].includes(room.id),
-        hidingSpotType: ({ master_bed: '床底', guest_room: '衣柜', bathroom: '浴帘后', basement: '储物柜', storage: '杂物堆', nursery: '婴儿床下' })[room.id] || null }));
+      // 杀手始终从地图南侧的灌木区出发，其余房间每局重新布局。
+      const startIndex = MAP_ROOMS_TEMPLATE.findIndex(room => room.id === 'front_yard');
+      shuffledCells[startIndex] = { row: 5, col: 2 };
+      const used = new Set(['5,2']);
+      const freeCells = shuffleArray(cells.filter(cell => !(cell.row === 5 && cell.col === 2)));
+      let cursor = 0;
+      return MAP_ROOMS_TEMPLATE.map((room, index) => {
+        const cell = index === startIndex ? { row: 5, col: 2 } : freeCells[cursor++];
+        return { ...room, row: cell.row, col: cell.col,
+          hasWindow: ['master_bed','living_room','guest_room','balcony','porch','greenhouse','neighbor_living','neighbor_bed'].includes(room.id),
+          hidingSpotType: ({ master_bed:'床底',guest_room:'衣柜',bathroom:'浴帘后',basement:'储物柜',storage:'杂物堆',nursery:'婴儿床下',attic:'旧行李箱后',neighbor_bed:'床底',shed:'工具柜' })[room.id] || null };
+      });
     }
     // --------------------------------------------------------------------------
     // 4. Web Audio API 恐怖音效引擎（无需外部文件）
@@ -1016,7 +1052,7 @@
     // --------------------------------------------------------------------------
     let gameState = null;
 
-    function createInitialResidents(roomIds) {
+    function createInitialResidents(roomIds, roomData) {
       const pool = [
         { name: '劳丽·邻家少女', icon: '👧', panic: 1 },
         { name: '汤米·小男孩', icon: '👦', panic: 1 },
@@ -1025,12 +1061,34 @@
         { name: '安妮·好奇学生', icon: '👩', panic: 1 },
         { name: '老管家·看守人', icon: '🧓', panic: 1 },
         { name: '艾米·夜班护士', icon: '👩‍⚕️', panic: 0 },
-        { name: '杰克·大学生', icon: '🧑‍🎓', panic: 1 }
+        { name: '杰克·大学生', icon: '🧑‍🎓', panic: 1 },
+        { name: '凯特·夜班店员', icon: '👩', panic: 1 },
+        { name: '丹尼·维修工', icon: '🧔', panic: 0 },
+        { name: '玛莎·邻居', icon: '👵', panic: 1 },
+        { name: '彼得·巡夜保安', icon: '👮', panic: 0 }
       ];
-      const count = 5 + Math.floor(Math.random() * 4);
+      const count = 8 + Math.floor(Math.random() * 5);
+      const candidates = shuffleArray(roomIds.filter(id => roomData[id] && !roomData[id].isExit && id !== 'front_yard'));
+      const chosen = [];
+      // 开局让幸存者分散在住宅区各处，并尽量远离杀手起点，避免几步内直接遭遇。
+      for (const id of candidates) {
+        const room = roomData[id];
+        const fromStart = Math.abs(room.row - 5) + Math.abs(room.col - 2);
+        if (fromStart < 3) continue;
+        const spaced = chosen.every(otherId => {
+          const other = roomData[otherId];
+          return Math.abs(room.row - other.row) + Math.abs(room.col - other.col) >= 2;
+        });
+        if (spaced) chosen.push(id);
+        if (chosen.length >= count) break;
+      }
+      for (const id of candidates) {
+        if (chosen.length >= count) break;
+        if (!chosen.includes(id)) chosen.push(id);
+      }
       return shuffleArray(pool).slice(0, count).map((person, index) => ({
         id: 'r' + (index + 1), name: person.name, role: '普通居民', icon: person.icon,
-        roomId: roomIds[Math.floor(Math.random() * roomIds.length)], panic: person.panic,
+        roomId: chosen[index] || candidates[index % candidates.length], panic: person.panic,
         broken: false, alive: true, armed: false, specialScore: 0,
         healthState: 'healthy', damageCount: 0, fleeing: false, reactionPending: false, hidden: false, hidingSpot: null,
         lastDamagedTurn: 0, actedThisTurn: false, treatmentUses: 1, escapeProgress: 0,
@@ -1048,7 +1106,7 @@
         killerId: 'myers', turn: 1, maxAp: 3, ap: 3, evil: 0, alert: 0, score: 0, kills: 0, killsThisTurn: 0,
         stalkUsedThisTurn: false, pureEvilActive: false, phoneCut: false, policeCalled: false, copSpawned: false, finalGirlSpawned: false, gameOver: false,
         killerRoom: 'front_yard', mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
-        rooms, residents: createInitialResidents(Object.keys(rooms)), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null,
+        rooms, residents: createInitialResidents(Object.keys(rooms), rooms), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null,
         exploredRooms: ['front_yard'], apPenaltyNextTurn: 0, lastBodyDiscoveryTurn: 0, lastNoise: null, noiseSerial: 0
       };
       drawCards(gameState, 5);
@@ -2095,9 +2153,10 @@
         workshop: { floor: '#3b403c', wall: '#96958b', yard: '#1b211e', corridor: '#aaa18d' }
       };
       const palette = palettes[s.mapSkin] || palettes.haddonfield;
+      const mapColumns = 6, mapRows = 6;
       const cellW = 250, cellH = 175, gapX = 34, gapY = 32, pad = 42;
-      const width = pad * 2 + 4 * cellW + 3 * gapX;
-      const height = pad * 2 + 4 * cellH + 3 * gapY;
+      const width = pad * 2 + mapColumns * cellW + (mapColumns - 1) * gapX;
+      const height = pad * 2 + mapRows * cellH + (mapRows - 1) * gapY;
       const rooms = Object.values(s.rooms);
       const roomAt = {};
       rooms.forEach(room => { roomAt[room.row + ',' + room.col] = room; });
@@ -2134,9 +2193,10 @@
       grid.style.backgroundRepeat = 'no-repeat';
       grid.style.position = 'relative';
       grid.style.width = '100%';
+      grid.style.minWidth = '1180px';
       grid.style.aspectRatio = width + ' / ' + height;
-      grid.style.minHeight = '500px';
-      grid.style.maxHeight = '900px';
+      grid.style.minHeight = '760px';
+      grid.style.maxHeight = 'none';
       grid.style.border = '1px solid rgba(190,176,150,.42)';
       grid.style.borderRadius = '5px';
       grid.style.overflow = 'hidden';
@@ -2180,7 +2240,7 @@
       });
       const caption = document.createElement('div');
       caption.className = 'house-map-caption';
-      caption.textContent = s.mapSkin.toUpperCase() + ' · ' + (s.exploredRooms || []).length + '/' + rooms.length + ' ROOMS EXPLORED · WAR FOG';
+      caption.textContent = 'HADDONFIELD DISTRICT · ' + (s.exploredRooms || []).length + '/' + rooms.length + ' AREAS EXPLORED · WAR FOG';
       grid.appendChild(caption);
       const visionNote = document.createElement('div');
       visionNote.className = 'house-vision-note';
