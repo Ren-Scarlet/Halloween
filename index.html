@@ -1028,13 +1028,14 @@
       document.getElementById('endModal').classList.add('hidden');
       const layout = generateHouseLayout();
       const rooms = {};
-      layout.forEach(r => { rooms[r.id] = { ...r, dark: r.defaultDark, darkTurns: r.defaultDark ? 99 : 0, locked: false, lockedTurns: 0, horrificScene: false }; });
+      layout.forEach(r => { rooms[r.id] = { ...r, dark: r.defaultDark, darkTurns: r.defaultDark ? 99 : 0, locked: false, lockedTurns: 0, horrificScene: false, corpseCount: 0, corpseDiscovered: false }; });
       const shuffledDeck = shuffleArray(CARD_TEMPLATES_MYERS.map((c, idx) => ({ ...c, uid: c.id + '_' + idx + '_' + Math.random().toString(36).slice(2, 6) })));
       gameState = {
         killerId: 'myers', turn: 1, maxAp: 3, ap: 3, evil: 0, alert: 0, score: 0, kills: 0, killsThisTurn: 0,
         stalkUsedThisTurn: false, pureEvilActive: false, phoneCut: false, policeCalled: false, copSpawned: false, finalGirlSpawned: false, gameOver: false,
         killerRoom: 'front_yard', mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
-        rooms, residents: createInitialResidents(Object.keys(rooms)), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null
+        rooms, residents: createInitialResidents(Object.keys(rooms)), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null,
+        apPenaltyNextTurn: 0, lastBodyDiscoveryTurn: 0
       };
       drawCards(gameState, 5);
       clearLog();
@@ -1185,6 +1186,12 @@
       resident.alive = false;
       state.kills += 1;
       state.killsThisTurn += 1;
+      const deathRoom = state.rooms[resident.roomId];
+      if (deathRoom) {
+        deathRoom.corpseCount = (deathRoom.corpseCount || 0) + 1;
+        deathRoom.corpseDiscovered = false;
+        deathRoom.horrificScene = true;
+      }
 
       const bonus = resident.specialScore || 0;
       const totalPts = basePoints + bonus;
@@ -1437,11 +1444,48 @@
         }
       });
 
-      // B. 居民与特殊威胁行动（逃跑 / 搜捕 / 报警）
+      // B1. 尸体发现：幸存者进入有尸体的房间或相邻房间后，会传播恐慌与警戒。
+      Object.values(gameState.rooms).forEach(room => {
+        if (!room.corpseCount || room.corpseDiscovered) return;
+        const witness = gameState.residents.find(r => r.alive && r.role !== '持枪警察' &&
+          (r.roomId === room.id || getAdjacentRooms(r.roomId).includes(room.id)));
+        if (witness) {
+          room.corpseDiscovered = true;
+          gameState.alert = Math.min(12, gameState.alert + 2);
+          gameState.residents.forEach(r => {
+            if (r.alive && r.role !== '持枪警察' && (r.roomId === room.id || getAdjacentRooms(r.roomId).includes(room.id))) {
+              r.panic = Math.min(3, (r.panic || 0) + 1);
+              if (r.panic >= 3) r.broken = true;
+            }
+          });
+          logEvent(`🩸【${witness.name}】发现【${room.name}】内的尸体！团队警戒 +2，附近幸存者恐慌上升！`, 'alert');
+          SoundEngine.panic();
+        }
+      });
+
+      // B2. 居民与特殊威胁行动（逃跑 / 搜捕 / 报警 / 反抗）
       const exitRooms = Object.values(gameState.rooms).filter(r => r.isExit);
       gameState.residents.forEach(r => { r.actedThisTurn = false; });
       gameState.residents.forEach(r => {
         if (!r.alive || r.actedThisTurn) return;
+        const nearbyThreat = r.roomId === gameState.killerRoom || getAdjacentRooms(r.roomId).includes(gameState.killerRoom);
+
+        // 反抗型/持械幸存者会尝试阻止杀手：相邻时预警，同房间时造成下一回合 AP 压制。
+        if ((r.armed || r.aiType === '反抗型') && nearbyThreat && r.lastResistanceTurn !== gameState.turn) {
+          r.lastResistanceTurn = gameState.turn;
+          if (r.roomId === gameState.killerRoom) {
+            gameState.apPenaltyNextTurn = Math.max(gameState.apPenaltyNextTurn || 0, 1);
+            r.armed = false;
+            gameState.alert = Math.min(12, gameState.alert + 1);
+            logEvent(`⚔️【${r.name}】近身反抗，迫使迈尔斯下回合少获得 1 AP！团队警戒 +1。`, 'warn');
+            triggerScreenFx('alert', false);
+          } else {
+            r.armed = true;
+            logEvent(`⚠️【${r.name}】察觉杀手接近，正在准备反抗；若杀手进入其房间，可能被拖慢行动！`, 'warn');
+          }
+          r.actedThisTurn = true;
+          return;
+        }
 
         // 同房间健康幸存者可治疗受伤者，或救援倒地者；杀手在场时不冒险。
         if (r.healthState === 'healthy' && r.treatmentUses > 0 && r.roomId !== gameState.killerRoom) {
@@ -1663,7 +1707,10 @@
 
       // D. 推进至下一回合并重置 AP / 抽牌
       gameState.turn += 1;
-      gameState.ap = gameState.maxAp;
+      const apPenalty = gameState.apPenaltyNextTurn || 0;
+      gameState.ap = Math.max(1, gameState.maxAp - apPenalty);
+      gameState.apPenaltyNextTurn = 0;
+      if (apPenalty > 0) logEvent(`⛓️ 迈尔斯受到幸存者反抗影响，本回合行动力减少 ${apPenalty} 点！`, 'warn');
       gameState.killsThisTurn = 0;
       gameState.stalkUsedThisTurn = false;
       drawCards(gameState, 5 - gameState.hand.length);
