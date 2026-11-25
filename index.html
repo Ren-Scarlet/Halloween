@@ -1020,6 +1020,7 @@
         broken: false, alive: true, armed: false, specialScore: 0,
         healthState: 'healthy', damageCount: 0, fleeing: false, reactionPending: false,
         lastDamagedTurn: 0, actedThisTurn: false, treatmentUses: 1,
+        phoneProgress: 0, hasReportedThreat: false,
         aiType: ['警觉型', '求救型', '救援型', '躲藏型', '英勇型', '反抗型'][Math.floor(Math.random() * 6)]
       }));
     }
@@ -1031,7 +1032,7 @@
       const shuffledDeck = shuffleArray(CARD_TEMPLATES_MYERS.map((c, idx) => ({ ...c, uid: c.id + '_' + idx + '_' + Math.random().toString(36).slice(2, 6) })));
       gameState = {
         killerId: 'myers', turn: 1, maxAp: 3, ap: 3, evil: 0, alert: 0, score: 0, kills: 0, killsThisTurn: 0,
-        stalkUsedThisTurn: false, pureEvilActive: false, phoneCut: false, copSpawned: false, finalGirlSpawned: false, gameOver: false,
+        stalkUsedThisTurn: false, pureEvilActive: false, phoneCut: false, policeCalled: false, copSpawned: false, finalGirlSpawned: false, gameOver: false,
         killerRoom: 'front_yard', mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
         rooms, residents: createInitialResidents(Object.keys(rooms)), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null
       };
@@ -1420,7 +1421,23 @@
         }
       });
 
-      // B. 居民与特殊威胁行动（逃跑 / 搜捕）
+      // B. 感知与消息传播：首次在视野内发现杀手的幸存者会向团队示警。
+      gameState.residents.forEach(r => {
+        if (!r.alive || r.role === '持枪警察' || r.hasReportedThreat) return;
+        const seesKiller = r.roomId === gameState.killerRoom ||
+          (getAdjacentRooms(r.roomId).includes(gameState.killerRoom) &&
+           !gameState.rooms[r.roomId].dark && !gameState.rooms[gameState.killerRoom]?.dark);
+        if (seesKiller) {
+          r.hasReportedThreat = true;
+          gameState.alert = Math.min(12, gameState.alert + 1);
+          gameState.residents.forEach(ally => {
+            if (ally.alive && ally.id !== r.id) ally.panic = Math.min(3, (ally.panic || 0) + 1);
+          });
+          logEvent(`📢【${r.name}】发现杀手并向幸存者示警！团队警戒 +1，其他幸存者恐慌上升。`, 'alert');
+        }
+      });
+
+      // B. 居民与特殊威胁行动（逃跑 / 搜捕 / 报警）
       const exitRooms = Object.values(gameState.rooms).filter(r => r.isExit);
       gameState.residents.forEach(r => { r.actedThisTurn = false; });
       gameState.residents.forEach(r => {
@@ -1500,10 +1517,40 @@
             }
           }
         } else if (!r.actedThisTurn) {
-          // 性格驱动的非紧急行动：不同 NPC 不再全部静止等待恐慌阈值。
-          const sameRoom = gameState.residents.filter(other => other.alive && other.id !== r.id && other.roomId === r.roomId);
-          const nearbyThreat = getAdjacentRooms(r.roomId).includes(gameState.killerRoom);
-          if (r.aiType === '警觉型' && nearbyThreat) {
+          // 报警分为寻找电话和拨号两个阶段，电话线被切断后转向出口求救。
+          const phoneRooms = Object.values(gameState.rooms).filter(room => /living_room|study|hallway/.test(room.id) && !room.locked);
+          const phoneRoom = phoneRooms.map(room => ({ room, path: findRoomPath(r.roomId, room.id) }))
+            .filter(item => item.path.length > 0)
+            .sort((a, b) => a.path.length - b.path.length)[0];
+          const shouldSeekHelp = gameState.alert >= 2 && !gameState.phoneCut && !gameState.policeCalled &&
+            r.role !== '持枪警察' && r.role !== '核心主角' && r.healthState !== 'downed';
+          if (shouldSeekHelp && phoneRoom) {
+            if (r.roomId !== phoneRoom.room.id) {
+              if (phoneRoom.path.length > 1) {
+                r.roomId = phoneRoom.path[1];
+                r.actedThisTurn = true;
+                logEvent(`📞【${r.name}】正赶往【${phoneRoom.room.name}】寻找电话报警。`, 'alert');
+              }
+            } else {
+              r.phoneProgress = (r.phoneProgress || 0) + 1;
+              r.actedThisTurn = true;
+              if (r.phoneProgress >= 2) {
+                gameState.policeCalled = true;
+                gameState.alert = Math.min(12, gameState.alert + 4);
+                logEvent(`🚨【${r.name}】成功拨通报警电话！警方警戒 +4！`, 'alert');
+                SoundEngine.alarm();
+                triggerScreenFx('alert', true);
+              } else {
+                logEvent(`☎️【${r.name}】正在拨打报警电话……还需要一个行动阶段。`, 'warn');
+              }
+            }
+          } else if (gameState.phoneCut && gameState.alert >= 2 && !gameState.policeCalled && r.phoneProgress > 0) {
+            r.phoneProgress = 0;
+            const escapeChoice = findNearestReachableExit(r.roomId);
+            if (escapeChoice?.path?.[1]) r.roomId = escapeChoice.path[1];
+            r.actedThisTurn = true;
+            logEvent(`【${r.name}】发现电话线已被切断，改为逃向出口求救！`, 'warn');
+          } else if (r.aiType === '警觉型' && nearbyThreat) {
             inflictPanic(gameState, r, 1, '附近发现杀手');
             r.actedThisTurn = true;
             logEvent(`👁️【${r.name}】察觉附近危险，警觉性提高并开始寻找逃跑路线。`, 'alert');
