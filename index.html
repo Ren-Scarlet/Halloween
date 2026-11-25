@@ -1375,8 +1375,8 @@
             return;
           }
           if (card.targetType === 'resident') {
-            const residentInRoom = gameState.residents.find(r => r.alive && r.roomId === roomId);
-            if (!residentInRoom) {
+            const residentInRoom = gameState.residents.find(r => r.alive && r.roomId === roomId && !r.hidden);
+            if (!residentInRoom || !getLineOfSightRooms(gameState, gameState.killerRoom).includes(roomId)) {
               logEvent(`【${gameState.rooms[roomId].name}】里没有存活的居民，请选择有居民的房间。`, 'warn');
               return;
             }
@@ -1425,6 +1425,10 @@
       if (gameState.gameOver) return;
       const resident = gameState.residents.find(r => r.id === residentId && r.alive);
       if (!resident) return;
+      if (resident.hidden || !getLineOfSightRooms(gameState, gameState.killerRoom).includes(resident.roomId)) {
+        logEvent('目标位置不在当前视野内，无法直接指定。请通过声音线索或探索重新定位。', 'warn');
+        return;
+      }
 
       if (gameState.selectedCardUid) {
         const card = gameState.hand.find(c => c.uid === gameState.selectedCardUid);
@@ -2147,7 +2151,7 @@
         const isAdj = adjIds.includes(room.id);
         const inLos = losIds.includes(room.id);
         const isExplored = explored.has(room.id);
-        const roomResidents = s.residents.filter(r => r.alive && r.roomId === room.id && !r.hidden);
+        const roomResidents = s.residents.filter(r => r.alive && r.roomId === room.id && !r.hidden && inLos);
         const hiddenCount = s.residents.filter(r => r.alive && r.roomId === room.id && r.hidden).length;
         const hotspot = document.createElement('button');
         hotspot.type = 'button';
@@ -2191,14 +2195,16 @@
       const box = document.getElementById('residentRoster');
       box.innerHTML = '';
 
+      const visibleRooms = new Set(getLineOfSightRooms(s, s.killerRoom));
       s.residents.forEach(r => {
-        const roomName = s.rooms[r.roomId]?.name || '未知';
+        const isKnownNow = r.alive && !r.hidden && visibleRooms.has(r.roomId);
+        const roomName = isKnownNow ? (s.rooms[r.roomId]?.name || '未知') : '位置未知';
         const healthLabel = r.healthState === 'downed'
           ? '<span class="text-red-400 font-bold">【倒地】</span>'
           : (r.healthState === 'injured' ? '<span class="text-orange-300 font-semibold">【受伤】</span>' : '<span class="text-emerald-300">【健康】</span>');
         const statusLabel = !r.alive
           ? '<span class="text-zinc-500 line-through">已死亡/离场</span>'
-          : `${healthLabel}${r.fleeing ? '<span class="text-amber-300">【逃跑中】</span>' : ''}`;
+          : (isKnownNow ? `${healthLabel}${r.fleeing ? '<span class="text-amber-300">【逃跑中】</span>' : ''}` : '<span class="text-zinc-500">【失去踪迹】</span>');
 
         const row = document.createElement('div');
         row.className = `flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs ${
@@ -2213,7 +2219,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0 font-mono-num text-[11px]">
-            ${r.alive ? `<span class="text-amber-400">恐慌:${r.panic}</span><span class="text-zinc-400">${r.aiType || '普通居民'}</span>` : ''}
+            ${r.alive ? (isKnownNow ? `<span class="text-amber-400">恐慌:${r.panic}</span><span class="text-zinc-400">${r.aiType || '普通居民'}</span>` : '<span class="text-zinc-500">情报未知</span>') : ''}
             ${statusLabel}
           </div>
         `;
