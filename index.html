@@ -1018,7 +1018,7 @@
         id: 'r' + (index + 1), name: person.name, role: '普通居民', icon: person.icon,
         roomId: roomIds[Math.floor(Math.random() * roomIds.length)], panic: person.panic,
         broken: false, alive: true, armed: false, specialScore: 0,
-        healthState: 'healthy', damageCount: 0, fleeing: false, reactionPending: false,
+        healthState: 'healthy', damageCount: 0, fleeing: false, reactionPending: false, hidden: false, hidingSpot: null,
         lastDamagedTurn: 0, actedThisTurn: false, treatmentUses: 1,
         phoneProgress: 0, hasReportedThreat: false,
         aiType: ['警觉型', '求救型', '救援型', '躲藏型', '英勇型', '反抗型'][Math.floor(Math.random() * 6)]
@@ -1035,7 +1035,7 @@
         stalkUsedThisTurn: false, pureEvilActive: false, phoneCut: false, policeCalled: false, copSpawned: false, finalGirlSpawned: false, gameOver: false,
         killerRoom: 'front_yard', mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
         rooms, residents: createInitialResidents(Object.keys(rooms)), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null,
-        apPenaltyNextTurn: 0, lastBodyDiscoveryTurn: 0
+        exploredRooms: ['front_yard'], apPenaltyNextTurn: 0, lastBodyDiscoveryTurn: 0
       };
       drawCards(gameState, 5);
       clearLog();
@@ -1134,6 +1134,17 @@
       }
 
       state.killerRoom = targetRoomId;
+      if (!state.exploredRooms) state.exploredRooms = [];
+      const newlySeen = [targetRoomId, ...getAdjacentRooms(targetRoomId), ...getLineOfSightRooms(state, targetRoomId)];
+      newlySeen.forEach(id => { if (!state.exploredRooms.includes(id)) state.exploredRooms.push(id); });
+      state.residents.forEach(resident => {
+        if (resident.alive && resident.hidden && resident.roomId === targetRoomId) {
+          resident.hidden = false;
+          resident.hidingSpot = null;
+          resident.panic = Math.min(3, resident.panic + 1);
+          logEvent(`👁️ 迈尔斯进入【${room.name}】，发现藏匿的【${resident.name}】！`, 'alert');
+        }
+      });
       SoundEngine.step();
 
       // 迈尔斯进入房间时，若房间有【崩溃】居民，令其更加绝望
@@ -1321,7 +1332,17 @@
 
       // 2. 点击当前房间内的幸存者进行攻击；倒地者可直接击杀。
       if (roomId === gameState.killerRoom) {
-        const target = gameState.residents.find(r => r.alive && r.roomId === roomId);
+        const hiddenTarget = gameState.residents.find(r => r.alive && r.hidden && r.roomId === roomId);
+        if (hiddenTarget) {
+          if (gameState.ap < 1) { logEvent('搜索藏身处需要 1 AP！', 'warn'); return; }
+          gameState.ap -= 1;
+          hiddenTarget.hidden = false;
+          hiddenTarget.hidingSpot = null;
+          logEvent(`🔦 迈尔斯搜索【${gameState.rooms[roomId].name}】，发现藏匿的【${hiddenTarget.name}】！`, 'kill');
+          renderAll();
+          return;
+        }
+        const target = gameState.residents.find(r => r.alive && r.roomId === roomId && !r.hidden);
         if (target) {
           if (target.reactionPending && target.lastDamagedTurn === gameState.turn) {
             logEvent(`【${target.name}】刚刚受伤，必须先获得逃跑反应！`, 'warn');
@@ -1469,6 +1490,28 @@
       gameState.residents.forEach(r => {
         if (!r.alive || r.actedThisTurn) return;
         const nearbyThreat = r.roomId === gameState.killerRoom || getAdjacentRooms(r.roomId).includes(gameState.killerRoom);
+
+        // 躲藏型幸存者在恐慌或团队警戒升高时寻找藏身点；藏匿后不会显示在地图居民标记中。
+        if (r.aiType === '躲藏型' && !r.hidden && !nearbyThreat && (gameState.alert >= 3 || r.panic >= 1)) {
+          const hidingRooms = ['master_bed', 'guest_room', 'bathroom', 'basement', 'storage', 'nursery'];
+          const spot = hidingRooms.map(id => gameState.rooms[id]).find(room => room && room.id !== r.roomId && !room.locked);
+          if (spot) {
+            const path = findRoomPath(r.roomId, spot.id);
+            if (path.length > 1) {
+              r.roomId = path[1];
+              r.actedThisTurn = true;
+              logEvent(`🤫【${r.name}】正在寻找藏身处。`, 'info');
+              return;
+            }
+            if (r.roomId === spot.id) {
+              r.hidden = true;
+              r.hidingSpot = spot.id;
+              r.actedThisTurn = true;
+              logEvent(`🤫【${r.name}】藏进【${spot.name}】，暂时无法从地图上直接发现。`, 'warn');
+              return;
+            }
+          }
+        }
 
         // 反抗型/持械幸存者会尝试阻止杀手：相邻时预警，同房间时造成下一回合 AP 压制。
         if ((r.armed || r.aiType === '反抗型') && nearbyThreat && r.lastResistanceTurn !== gameState.turn) {
@@ -1999,13 +2042,16 @@
       grid.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.45),0 18px 42px rgba(0,0,0,.45)';
       const adjIds = getAdjacentRooms(s.killerRoom);
       const losIds = getLineOfSightRooms(s, s.killerRoom);
+      const explored = new Set([...(s.exploredRooms || []), s.killerRoom, ...adjIds, ...losIds]);
       const selectedCard = s.hand.find(c => c.uid === s.selectedCardUid);
       rooms.forEach(room => {
         const x = pad + room.col * (cellW + gapX), y = pad + room.row * (cellH + gapY);
         const isKillerHere = s.killerRoom === room.id;
         const isAdj = adjIds.includes(room.id);
         const inLos = losIds.includes(room.id);
-        const roomResidents = s.residents.filter(r => r.alive && r.roomId === room.id);
+        const isExplored = explored.has(room.id);
+        const roomResidents = s.residents.filter(r => r.alive && r.roomId === room.id && !r.hidden);
+        const hiddenCount = s.residents.filter(r => r.alive && r.roomId === room.id && r.hidden).length;
         const hotspot = document.createElement('button');
         hotspot.type = 'button';
         hotspot.className = 'house-room-hotspot';
@@ -2013,23 +2059,25 @@
         hotspot.style.top = (y / height * 100) + '%';
         hotspot.style.width = (cellW / width * 100) + '%';
         hotspot.style.height = (cellH / height * 100) + '%';
-        hotspot.style.borderColor = isKillerHere ? '#d34a50' : (selectedCard ? '#d2ad71' : (inLos && roomResidents.length ? '#b94d54' : (isAdj ? '#c6a06b' : 'rgba(0,0,0,0)')));
-        hotspot.style.background = isKillerHere ? 'linear-gradient(135deg,rgba(119,22,29,.46),rgba(10,8,9,.12))' : (selectedCard ? 'rgba(184,139,75,.14)' : (inLos && roomResidents.length ? 'rgba(135,25,35,.2)' : 'rgba(4,7,9,.12)'));
+        hotspot.style.borderColor = isKillerHere ? '#d34a50' : (!isExplored ? 'rgba(105,115,122,.22)' : (selectedCard ? '#d2ad71' : (inLos && roomResidents.length ? '#b94d54' : (isAdj ? '#c6a06b' : 'rgba(0,0,0,0)'))));
+        hotspot.style.background = !isExplored ? 'rgba(5,8,12,.88)' : (isKillerHere ? 'linear-gradient(135deg,rgba(119,22,29,.46),rgba(10,8,9,.12))' : (selectedCard ? 'rgba(184,139,75,.14)' : (inLos && roomResidents.length ? 'rgba(135,25,35,.2)' : 'rgba(4,7,9,.12)')));
         hotspot.style.boxShadow = isKillerHere ? 'inset 0 0 28px rgba(205,48,58,.36)' : (isAdj ? 'inset 0 0 18px rgba(196,151,91,.16)' : 'none');
-        hotspot.innerHTML = '<span class="house-room-label">' + room.name + '</span>' +
+        hotspot.innerHTML = (isExplored ? '<span class="house-room-label">' + room.name + '</span>' : '<span class="house-room-label">？？？</span>') +
           (isKillerHere ? '<span class="house-killer-marker">🔪 迈尔斯</span>' : '') +
-          (room.isExit ? '<span class="house-state-tag">出口</span>' : '') +
-          (room.locked ? '<span class="house-state-tag locked">🔒 锁门</span>' : '') +
-          (room.dark ? '<span class="house-state-tag dark">黑暗</span>' : '') +
-          (room.horrificScene ? '<span class="house-state-tag danger">血迹</span>' : '') +
-          (roomResidents.length ? '<span class="house-residents">' + roomResidents.map(r => '<i title="' + r.name + '">' + r.icon + '</i>').join('') + '</span>' : '');
+          (isExplored && room.isExit ? '<span class="house-state-tag">出口</span>' : '') +
+          (isExplored && room.locked ? '<span class="house-state-tag locked">🔒 锁门</span>' : '') +
+          (isExplored && room.dark ? '<span class="house-state-tag dark">黑暗</span>' : '') +
+          (isExplored && room.horrificScene ? '<span class="house-state-tag danger">血迹</span>' : '') +
+          (roomResidents.length ? '<span class="house-residents">' + roomResidents.map(r => '<i title="' + r.name + '">' + r.icon + '</i>').join('') + '</span>' : '') +
+          (isKillerHere && hiddenCount ? '<span class="house-state-tag danger">藏匿者 ' + hiddenCount + '</span>' : '') +
+          (!isExplored ? '<span class="house-state-tag dark">未探索</span>' : '');
         hotspot.setAttribute('aria-label', room.name + (isKillerHere ? '，迈尔斯所在' : ''));
         hotspot.onclick = () => handleRoomClick(room.id);
         grid.appendChild(hotspot);
       });
       const caption = document.createElement('div');
       caption.className = 'house-map-caption';
-      caption.textContent = s.mapSkin.toUpperCase() + ' · ' + rooms.length + ' ROOMS · RANDOM FLOORPLAN';
+      caption.textContent = s.mapSkin.toUpperCase() + ' · ' + (s.exploredRooms || []).length + '/' + rooms.length + ' ROOMS EXPLORED · WAR FOG';
       grid.appendChild(caption);
     }
     function renderRoster() {
