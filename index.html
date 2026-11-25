@@ -287,6 +287,18 @@
     .house-map-caption {position:absolute;right:10px;bottom:8px;z-index:5;color:rgba(235,224,204,.58);font:9px monospace;letter-spacing:.2em;text-shadow:0 2px 5px #000;pointer-events:none}
     @media(max-width:700px) { #mapGrid { min-height:290px!important; }.house-room-label {font-size:7px;padding:2px 3px}.house-state-tag {font-size:7px}.house-killer-marker {font-size:8px;padding:2px 3px} }
 
+
+    /* Night Hunt procedural visual pass */
+    .house-map-caption,.house-vision-note{position:absolute;left:14px;z-index:5;padding:7px 11px;background:rgba(7,8,10,.9);border:1px solid rgba(176,145,105,.42);color:#c8b89f;font:10px/1.4 'JetBrains Mono',monospace;letter-spacing:.1em;backdrop-filter:blur(8px)}
+    .house-map-caption{bottom:12px}.house-vision-note{top:12px;max-width:min(560px,85%);letter-spacing:.02em;font-family:Inter,sans-serif;color:#d0c6b6}
+    .house-room-hotspot{transition:background .18s,border-color .18s,box-shadow .18s}.house-room-hotspot:hover{outline:1px solid rgba(219,180,119,.8);filter:brightness(1.18)}
+    .house-room-label{font-family:Cinzel,serif;letter-spacing:.06em;text-shadow:0 2px 7px #000,0 0 12px #000}
+    .house-state-tag{box-shadow:0 2px 8px #000;background:rgba(10,10,12,.88)!important;border:1px solid rgba(170,145,111,.35)}
+    .killer-card{position:relative;overflow:hidden;min-height:210px;background:linear-gradient(145deg,#1a191a,#0a0b0e 72%)!important;border-color:#51443a!important;box-shadow:inset 0 1px rgba(255,255,255,.05),0 10px 25px rgba(0,0,0,.4);transition:transform .18s,border-color .18s,box-shadow .18s}
+    .killer-card:hover{transform:translateY(-7px) scale(1.025);border-color:#b78b62!important;box-shadow:0 15px 32px rgba(0,0,0,.65),0 0 20px rgba(135,35,37,.22)}
+    .card-art{height:86px;margin:-5px -5px 11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:radial-gradient(ellipse at center,rgba(117,35,34,.45),transparent 68%),repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 1px,transparent 1px 7px),linear-gradient(145deg,#292323,#0b0c0f);border:1px solid rgba(173,133,96,.3);color:#d4b58c}
+    .card-art strong{font:700 38px Cinzel,serif;text-shadow:0 0 18px rgba(174,53,49,.7)}.card-art small{font:8px 'JetBrains Mono',monospace;letter-spacing:.22em;color:#9c8a77}
+
   </style>
 </head>
 <body class="antialiased selection:bg-red-700 selection:text-white">
@@ -934,7 +946,9 @@
       const cells = [];
       for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) cells.push({ row, col });
       const shuffledCells = shuffleArray(cells);
-      return MAP_ROOMS_TEMPLATE.map((room, index) => ({ ...room, row: shuffledCells[index].row, col: shuffledCells[index].col }));
+      return MAP_ROOMS_TEMPLATE.map((room, index) => ({ ...room, row: shuffledCells[index].row, col: shuffledCells[index].col,
+        hasWindow: ['master_bed', 'living_room', 'guest_room', 'balcony', 'porch'].includes(room.id),
+        hidingSpotType: ({ master_bed: '床底', guest_room: '衣柜', bathroom: '浴帘后', basement: '储物柜', storage: '杂物堆', nursery: '婴儿床下' })[room.id] || null }));
     }
     // --------------------------------------------------------------------------
     // 4. Web Audio API 恐怖音效引擎（无需外部文件）
@@ -1019,8 +1033,8 @@
         roomId: roomIds[Math.floor(Math.random() * roomIds.length)], panic: person.panic,
         broken: false, alive: true, armed: false, specialScore: 0,
         healthState: 'healthy', damageCount: 0, fleeing: false, reactionPending: false, hidden: false, hidingSpot: null,
-        lastDamagedTurn: 0, actedThisTurn: false, treatmentUses: 1,
-        phoneProgress: 0, hasReportedThreat: false,
+        lastDamagedTurn: 0, actedThisTurn: false, treatmentUses: 1, escapeProgress: 0,
+        phoneProgress: 0, hasReportedThreat: false, lastHeardNoiseSerial: 0, lastResistanceTurn: 0,
         aiType: ['警觉型', '求救型', '救援型', '躲藏型', '英勇型', '反抗型'][Math.floor(Math.random() * 6)]
       }));
     }
@@ -1028,14 +1042,14 @@
       document.getElementById('endModal').classList.add('hidden');
       const layout = generateHouseLayout();
       const rooms = {};
-      layout.forEach(r => { rooms[r.id] = { ...r, dark: r.defaultDark, darkTurns: r.defaultDark ? 99 : 0, locked: false, lockedTurns: 0, horrificScene: false, corpseCount: 0, corpseDiscovered: false }; });
+      layout.forEach(r => { rooms[r.id] = { ...r, dark: r.defaultDark, darkTurns: r.defaultDark ? 99 : 0, locked: false, lockedTurns: 0, barricadedTurns: 0, horrificScene: false, corpseCount: 0, corpseDiscovered: false }; });
       const shuffledDeck = shuffleArray(CARD_TEMPLATES_MYERS.map((c, idx) => ({ ...c, uid: c.id + '_' + idx + '_' + Math.random().toString(36).slice(2, 6) })));
       gameState = {
         killerId: 'myers', turn: 1, maxAp: 3, ap: 3, evil: 0, alert: 0, score: 0, kills: 0, killsThisTurn: 0,
         stalkUsedThisTurn: false, pureEvilActive: false, phoneCut: false, policeCalled: false, copSpawned: false, finalGirlSpawned: false, gameOver: false,
         killerRoom: 'front_yard', mapSkin: ['haddonfield', 'farmhouse', 'motel', 'workshop'][Math.floor(Math.random() * 4)],
         rooms, residents: createInitialResidents(Object.keys(rooms)), deck: shuffledDeck, hand: [], discard: [], selectedCardUid: null,
-        exploredRooms: ['front_yard'], apPenaltyNextTurn: 0, lastBodyDiscoveryTurn: 0
+        exploredRooms: ['front_yard'], apPenaltyNextTurn: 0, lastBodyDiscoveryTurn: 0, lastNoise: null, noiseSerial: 0
       };
       drawCards(gameState, 5);
       clearLog();
@@ -1062,19 +1076,15 @@
     function getLineOfSightRooms(state, roomId) {
       const origin = state.rooms[roomId];
       if (!origin) return [];
-      const set = new Set(getAdjacentRooms(roomId));
-      set.add(roomId);
-
-      if (roomId === 'front_yard') {
-        Object.values(state.rooms).forEach(r => {
-          if (r.col === origin.col) set.add(r.id);
-        });
-      } else if (roomId === 'hallway') {
-        Object.values(state.rooms).forEach(r => {
-          if (r.row === origin.row || r.col === origin.col) set.add(r.id);
-        });
-      }
-      return Array.from(set);
+      const visible = new Set([roomId]);
+      // 视野只穿过一条直接相连的通道；黑暗、锁门和封堵都会阻断视线。
+      if (origin.dark || origin.locked) return Array.from(visible);
+      getAdjacentRooms(roomId).forEach(id => {
+        const target = state.rooms[id];
+        if (!target || target.dark || target.locked || target.barricadedTurns > 0) return;
+        visible.add(id);
+      });
+      return Array.from(visible);
     }
 
     function countResidentsInRoom(state, roomId) {
@@ -1120,7 +1130,11 @@
       const room = state.rooms[targetRoomId];
       if (!room) return false;
       if (room.locked && !state.pureEvilActive) {
-        logEvent(`🔒 【${room.name}】的门锁死了！需要【重击破门】或【纯粹之恶】才能强行进入。`, 'warn');
+        logEvent(`🔒 【${room.name}】的门锁死了！需要破门或特殊能力才能进入。`, 'warn');
+        return false;
+      }
+      if ((room.barricadedTurns || 0) > 0 && !state.pureEvilActive) {
+        logEvent(`🪑【${room.name}】的通道被幸存者堵住了！需要先破坏障碍。`, 'warn');
         return false;
       }
 
@@ -1135,7 +1149,7 @@
 
       state.killerRoom = targetRoomId;
       if (!state.exploredRooms) state.exploredRooms = [];
-      const newlySeen = [targetRoomId, ...getAdjacentRooms(targetRoomId), ...getLineOfSightRooms(state, targetRoomId)];
+      const newlySeen = getLineOfSightRooms(state, targetRoomId);
       newlySeen.forEach(id => { if (!state.exploredRooms.includes(id)) state.exploredRooms.push(id); });
       state.residents.forEach(resident => {
         if (resident.alive && resident.hidden && resident.roomId === targetRoomId) {
@@ -1146,6 +1160,7 @@
         }
       });
       SoundEngine.step();
+      if (!room.dark) emitNoise(state, targetRoomId, 1, '脚步声');
 
       // 迈尔斯进入房间时，若房间有【崩溃】居民，令其更加绝望
       const brokenCount = state.residents.filter(r => r.alive && r.roomId === targetRoomId && r.broken).length;
@@ -1155,6 +1170,46 @@
         logEvent(`迈尔斯移动至【${room.name}】${room.dark ? '（黑暗掩护）' : ''}。`, 'info');
       }
       return true;
+    }
+
+    function emitNoise(state, roomId, radius = 1, label = '声响') {
+      if (!state || !state.rooms[roomId]) return;
+      state.noiseSerial = (state.noiseSerial || 0) + 1;
+      state.lastNoise = { roomId, radius, label, serial: state.noiseSerial, turn: state.turn };
+    }
+
+    function roomDistanceWithin(fromId, targetId, maxDistance) {
+      if (fromId === targetId) return 0;
+      const queue = [[fromId, 0]], visited = new Set([fromId]);
+      while (queue.length) {
+        const [id, distance] = queue.shift();
+        if (distance >= maxDistance) continue;
+        for (const next of getAdjacentRooms(id)) {
+          if (visited.has(next) || gameState.rooms[next]?.locked) continue;
+          if (next === targetId) return distance + 1;
+          visited.add(next); queue.push([next, distance + 1]);
+        }
+      }
+      return Infinity;
+    }
+
+    function attemptSearchHiddenResident(state, roomId) {
+      const target = state.residents.find(r => r.alive && r.hidden && r.roomId === roomId);
+      if (!target) return false;
+      if (state.ap < 1) { logEvent('搜索藏身处需要 1 AP！', 'warn'); return true; }
+      state.ap -= 1;
+      const spot = target.hidingSpot || state.rooms[roomId]?.hidingSpotType || '未知藏身处';
+      const chances = { '床底': 0.58, '衣柜': 0.72, '浴帘后': 0.48, '储物柜': 0.66, '杂物堆': 0.62, '婴儿床下': 0.52 };
+      if (Math.random() < (chances[spot] ?? 0.6)) {
+        target.hidden = false; target.hidingSpot = null; target.fleeing = true;
+        target.panic = Math.min(3, (target.panic || 0) + 1);
+        logEvent(`🔦 搜索【${spot}】成功！发现【${target.name}】，对方惊慌逃窜！`, 'kill');
+      } else {
+        emitNoise(state, roomId, 2, '翻找藏身处');
+        state.alert = Math.min(12, state.alert + 1);
+        logEvent(`🔦 翻找【${spot}】没有找到【${target.name}】。翻找声惊动附近幸存者，团队警戒 +1！`, 'warn');
+      }
+      renderAll(); return true;
     }
 
     function damageResident(state, resident, methodText = '近身攻击') {
@@ -1183,6 +1238,7 @@
         triggerScreenFx('blood', true);
       }
       SoundEngine.slash();
+      emitNoise(state, resident.roomId, 2, '攻击声');
       renderAll();
       return true;
     }
@@ -1332,16 +1388,7 @@
 
       // 2. 点击当前房间内的幸存者进行攻击；倒地者可直接击杀。
       if (roomId === gameState.killerRoom) {
-        const hiddenTarget = gameState.residents.find(r => r.alive && r.hidden && r.roomId === roomId);
-        if (hiddenTarget) {
-          if (gameState.ap < 1) { logEvent('搜索藏身处需要 1 AP！', 'warn'); return; }
-          gameState.ap -= 1;
-          hiddenTarget.hidden = false;
-          hiddenTarget.hidingSpot = null;
-          logEvent(`🔦 迈尔斯搜索【${gameState.rooms[roomId].name}】，发现藏匿的【${hiddenTarget.name}】！`, 'kill');
-          renderAll();
-          return;
-        }
+        if (attemptSearchHiddenResident(gameState, roomId)) return;
         const target = gameState.residents.find(r => r.alive && r.roomId === roomId && !r.hidden);
         if (target) {
           if (target.reactionPending && target.lastDamagedTurn === gameState.turn) {
@@ -1359,6 +1406,13 @@
 
       // 3. 否则尝试向相邻房间移动
       if (getAdjacentRooms(gameState.killerRoom).includes(roomId)) {
+        if ((gameState.rooms[roomId].barricadedTurns || 0) > 0 && !gameState.pureEvilActive) {
+          if (gameState.ap < 1) { logEvent('破坏障碍需要 1 AP！', 'warn'); return; }
+          gameState.ap -= 1;
+          gameState.rooms[roomId].barricadedTurns = Math.max(0, gameState.rooms[roomId].barricadedTurns - 1);
+          logEvent(`🪑 迈尔斯破坏【${gameState.rooms[roomId].name}】入口障碍，剩余强度：${gameState.rooms[roomId].barricadedTurns}。`, 'warn');
+          renderAll(); return;
+        }
         moveKillerToRoom(gameState, roomId, false);
         renderAll();
       } else {
@@ -1452,9 +1506,7 @@
       // B. 感知与消息传播：首次在视野内发现杀手的幸存者会向团队示警。
       gameState.residents.forEach(r => {
         if (!r.alive || r.role === '持枪警察' || r.hasReportedThreat) return;
-        const seesKiller = r.roomId === gameState.killerRoom ||
-          (getAdjacentRooms(r.roomId).includes(gameState.killerRoom) &&
-           !gameState.rooms[r.roomId].dark && !gameState.rooms[gameState.killerRoom]?.dark);
+        const seesKiller = getLineOfSightRooms(gameState, r.roomId).includes(gameState.killerRoom);
         if (seesKiller) {
           r.hasReportedThreat = true;
           gameState.alert = Math.min(12, gameState.alert + 1);
@@ -1484,32 +1536,74 @@
         }
       });
 
+      // B1.1 声音线索：传播大致位置，不直接揭示杀手精确坐标。
+      if (gameState.lastNoise && gameState.lastNoise.turn === gameState.turn) {
+        gameState.residents.forEach(r => {
+          if (!r.alive || r.lastHeardNoiseSerial === gameState.lastNoise.serial) return;
+          if (roomDistanceWithin(r.roomId, gameState.lastNoise.roomId, gameState.lastNoise.radius) <= gameState.lastNoise.radius) {
+            r.lastHeardNoiseSerial = gameState.lastNoise.serial;
+            r.panic = Math.min(3, (r.panic || 0) + 1);
+            logEvent(`👂【${r.name}】听到附近传来${gameState.lastNoise.label}，开始警戒。`, 'warn');
+          }
+        });
+      }
+
       // B2. 居民与特殊威胁行动（逃跑 / 搜捕 / 报警 / 反抗）
       const exitRooms = Object.values(gameState.rooms).filter(r => r.isExit);
       gameState.residents.forEach(r => { r.actedThisTurn = false; });
       gameState.residents.forEach(r => {
         if (!r.alive || r.actedThisTurn) return;
-        const nearbyThreat = r.roomId === gameState.killerRoom || getAdjacentRooms(r.roomId).includes(gameState.killerRoom);
+        const nearbyThreat = getLineOfSightRooms(gameState, r.roomId).includes(gameState.killerRoom) ||
+          (gameState.lastNoise && roomDistanceWithin(r.roomId, gameState.lastNoise.roomId, 1) <= 1);
+
+        // 已抵达出口的幸存者需要完成准备进度；杀手进入同一房间即可打断。
+        if (gameState.rooms[r.roomId]?.isExit) {
+          if (r.roomId === gameState.killerRoom) {
+            r.escapeProgress = 0; r.fleeing = true; r.actedThisTurn = true;
+            logEvent(`🚪【${r.name}】在出口处遭到杀手阻断，逃生进度清零！`, 'warn');
+            return;
+          }
+          r.escapeProgress = (r.escapeProgress || 0) + 1;
+          if (r.escapeProgress >= 2) {
+            r.alive = false; gameState.alert = Math.min(12, gameState.alert + 2);
+            SoundEngine.alarm();
+            logEvent(`🏃【${r.name}】完成出口准备并逃离房屋！警方警戒 +2！`, 'alert');
+          } else logEvent(`🚪【${r.name}】正在出口处准备逃离（1/2），仍可被打断！`, 'warn');
+          r.actedThisTurn = true; return;
+        }
 
         // 躲藏型幸存者在恐慌或团队警戒升高时寻找藏身点；藏匿后不会显示在地图居民标记中。
-        if (r.aiType === '躲藏型' && !r.hidden && !nearbyThreat && (gameState.alert >= 3 || r.panic >= 1)) {
-          const hidingRooms = ['master_bed', 'guest_room', 'bathroom', 'basement', 'storage', 'nursery'];
-          const spot = hidingRooms.map(id => gameState.rooms[id]).find(room => room && room.id !== r.roomId && !room.locked);
-          if (spot) {
-            const path = findRoomPath(r.roomId, spot.id);
-            if (path.length > 1) {
-              r.roomId = path[1];
-              r.actedThisTurn = true;
-              logEvent(`🤫【${r.name}】正在寻找藏身处。`, 'info');
-              return;
-            }
-            if (r.roomId === spot.id) {
-              r.hidden = true;
-              r.hidingSpot = spot.id;
-              r.actedThisTurn = true;
-              logEvent(`🤫【${r.name}】藏进【${spot.name}】，暂时无法从地图上直接发现。`, 'warn');
-              return;
-            }
+        if (r.aiType === '躲藏型' && !r.hidden && !r.reactionPending && !nearbyThreat && (gameState.alert >= 3 || r.panic >= 1)) {
+          const spots = Object.values(gameState.rooms).filter(room => room.hidingSpotType && !room.locked)
+            .map(room => ({ room, path: findRoomPath(r.roomId, room.id) }))
+            .filter(item => item.room.id === r.roomId || item.path.length > 0)
+            .sort((a, b) => (a.path.length || 0) - (b.path.length || 0));
+          const choice = spots[0];
+          if (choice && choice.room.id === r.roomId) {
+            r.hidden = true; r.hidingSpot = choice.room.hidingSpotType; r.actedThisTurn = true;
+            logEvent(`🤫【${r.name}】藏进【${choice.room.name}】的${r.hidingSpot}，暂时脱离视野！`, 'warn');
+            return;
+          }
+          if (choice && choice.path.length > 1) {
+            r.roomId = choice.path[1]; r.actedThisTurn = true;
+            logEvent(`🤫【${r.name}】正前往${choice.room.hidingSpotType}躲藏。`, 'info'); return;
+          }
+        }
+
+        // 反抗型/英勇型会寻找武器；反抗型还会在通道布置临时障碍。
+        if ((r.aiType === '反抗型' || r.aiType === '英勇型') && !r.armed && gameState.alert >= 3 && !nearbyThreat) {
+          const targets = ['garage','study','kitchen'].map(id => gameState.rooms[id]).filter(room => room && !room.locked)
+            .map(room => ({ room, path: findRoomPath(r.roomId, room.id) }))
+            .filter(item => item.room.id === r.roomId || item.path.length > 0)
+            .sort((a,b) => (a.path.length || 0) - (b.path.length || 0));
+          const target = targets[0];
+          if (target && target.room.id === r.roomId) {
+            r.armed = true; r.actedThisTurn = true;
+            logEvent(`⚔️【${r.name}】在【${target.room.name}】找到临时武器！`, 'warn'); return;
+          }
+          if (target && target.path.length > 1) {
+            r.roomId = target.path[1]; r.actedThisTurn = true;
+            logEvent(`⚔️【${r.name}】正在前往【${target.room.name}】寻找武器。`, 'info'); return;
           }
         }
 
@@ -1524,10 +1618,25 @@
             triggerScreenFx('alert', false);
           } else {
             r.armed = true;
-            logEvent(`⚠️【${r.name}】察觉杀手接近，正在准备反抗；若杀手进入其房间，可能被拖慢行动！`, 'warn');
+            const room = gameState.rooms[r.roomId];
+            if (r.aiType === '反抗型' && room && room.barricadedTurns <= 0) {
+              room.barricadedTurns = 2;
+              logEvent(`🪑【${r.name}】在【${room.name}】入口设置临时障碍！杀手需要花费行动破坏。`, 'warn');
+            } else logEvent(`⚠️【${r.name}】察觉杀手接近，正在准备反抗；若杀手进入其房间，可能被拖慢行动！`, 'warn');
           }
           r.actedThisTurn = true;
           return;
+        }
+
+        // 受伤后的强制反应优先级最高：先逃跑，不能被躲藏、治疗或报警抢占。
+        if (r.healthState === 'injured' && r.reactionPending) {
+          const choice = findNearestReachableExit(r.roomId);
+          const step = choice?.path?.[1] || null;
+          if (step && !gameState.rooms[step].locked) {
+            r.roomId = step; r.escapeProgress = 0;
+            logEvent(`🏃【${r.name}】受伤后立即逃跑至【${gameState.rooms[step].name}】！`, 'alert');
+          }
+          r.reactionPending = false; r.fleeing = true; r.actedThisTurn = true; return;
         }
 
         // 同房间健康幸存者可治疗受伤者，或救援倒地者；杀手在场时不冒险。
@@ -1562,23 +1671,8 @@
           return;
         }
 
-        // 受伤后的强制反应：本轮 NPC 阶段优先逃跑一次。
-        if (r.healthState === 'injured' && r.reactionPending) {
-          const exitChoice = findNearestReachableExit(r.roomId);
-          const targetExit = exitChoice ? exitChoice.exit : null;
-          if (targetExit) {
-            const nextRoomId = exitChoice.path[1] || null;
-            if (nextRoomId && !gameState.rooms[nextRoomId].locked) {
-              r.roomId = nextRoomId;
-              logEvent(`🏃【${r.name}】受伤后立即逃跑至【${gameState.rooms[nextRoomId].name}】。`, 'alert');
-            }
-          }
-          r.reactionPending = false; r.fleeing = true; r.actedThisTurn = true;
-          return;
-        }
-
-        // 恐慌 ≥ 2 的居民试图向最近出口逃跑
-        if (r.panic >= 2 || r.broken || r.fleeing) {
+        // 恐慌、受伤、目击杀手或主动逃跑都会提高逃生优先级。
+        if (r.panic >= 2 || r.broken || r.fleeing || nearbyThreat || r.healthState === 'injured') {
           const exitChoice = findNearestReachableExit(r.roomId);
           const targetExit = exitChoice ? exitChoice.exit : null;
           const nextRoomId = exitChoice ? (exitChoice.path[1] || null) : null;
@@ -1593,13 +1687,10 @@
             } else {
               r.roomId = nextRoomId;
               r.actedThisTurn = true;
-              // 若到达出口且门未锁，尝试逃脱
+              // 到达出口只进入准备阶段，不会立即逃脱。
               if (nextRoom.isExit && !nextRoom.locked) {
-                r.alive = false;
-                gameState.alert = Math.min(12, gameState.alert + 2);
-                SoundEngine.alarm();
-                triggerScreenFx('alert', true);
-                logEvent(`🏃 【${r.name}】从【${nextRoom.name}】逃出生天并报信！警方警戒 +2！`, 'alert');
+                r.escapeProgress = 0;
+                logEvent(`🚪【${r.name}】抵达【${nextRoom.name}】，开始准备逃离（0/2）。`, 'warn');
               }
             }
           }
@@ -1692,6 +1783,7 @@
             room.darkTurns = 0;
           }
         }
+        if (room.barricadedTurns > 0) room.barricadedTurns -= 1;
         if (room.locked) {
           room.lockedTurns -= 1;
           if (room.lockedTurns <= 0) {
@@ -2018,15 +2110,20 @@
       });
       const roomShapes = rooms.map(room => {
         const x = pad + room.col * (cellW + gapX), y = pad + room.row * (cellH + gapY);
-        const floor = room.defaultDark ? '#302923' : palette.floor;
-        let furniture = '<rect x="' + (x+65) + '" y="' + (y+60) + '" width="120" height="52" rx="5" fill="#55483b" stroke="#a18a70" stroke-width="4"/><path d="M' + (x+75) + ' ' + (y+86) + 'h100" stroke="#c4ad8e" stroke-opacity=".35" stroke-width="3"/>';
-        if (room.id === 'living_room' || room.id === 'dining_room') furniture = '<rect x="' + (x+72) + '" y="' + (y+65) + '" width="105" height="55" rx="8" fill="#716050" stroke="#b09b7c" stroke-width="5"/><rect x="' + (x+83) + '" y="' + (y+74) + '" width="83" height="36" fill="#403832"/>';
-        else if (room.id === 'kitchen' || room.id === 'laundry') furniture = '<rect x="' + (x+35) + '" y="' + (y+45) + '" width="175" height="24" fill="#8e887b" stroke="#272624" stroke-width="4"/><circle cx="' + (x+160) + '" cy="' + (y+112) + '" r="25" fill="#817d74" stroke="#292b2b" stroke-width="5"/>';
-        else if (room.id === 'master_bed' || room.id === 'guest_room' || room.id === 'nursery') furniture = '<rect x="' + (x+65) + '" y="' + (y+55) + '" width="120" height="82" rx="7" fill="#645448" stroke="#a28a70" stroke-width="5"/><path d="M' + (x+72) + ' ' + (y+91) + 'h106" stroke="#c6b398" stroke-width="4"/>';
-        else if (room.id === 'bathroom') furniture = '<rect x="' + (x+45) + '" y="' + (y+52) + '" width="70" height="70" rx="8" fill="#8b918d" stroke="#303638" stroke-width="5"/><circle cx="' + (x+172) + '" cy="' + (y+94) + '" r="29" fill="#9ba09b" stroke="#333a3b" stroke-width="5"/>';
-        return '<g><rect x="' + (x+7) + '" y="' + (y+8) + '" width="' + cellW + '" height="' + cellH + '" fill="#000" opacity=".38"/><rect x="' + x + '" y="' + y + '" width="' + cellW + '" height="' + cellH + '" rx="3" fill="' + floor + '" stroke="' + palette.wall + '" stroke-width="13"/><rect x="' + (x+9) + '" y="' + (y+9) + '" width="' + (cellW-18) + '" height="' + (cellH-18) + '" fill="none" stroke="#090b0d" stroke-width="2"/>' + furniture + '<path d="M' + (x+cellW*.32) + ' ' + (y+5) + 'h' + (cellW*.36) + '" stroke="#9ba8ad" stroke-width="5" opacity=".7"/></g>';
+        const floor = room.defaultDark ? '#29231f' : palette.floor;
+        const planks = Array.from({length:7},(_,i)=>'<path d="M'+(x+13)+' '+(y+24+i*19)+'h'+(cellW-26)+'" stroke="#120f0d" stroke-width="2" opacity=".34"/>').join('');
+        const grain = Array.from({length:18},(_,i)=>'<path d="M'+(x+18+(i%6)*38)+' '+(y+30+Math.floor(i/6)*45)+'h'+(18+(i%4)*7)+'" stroke="#d0ae7d" stroke-width="1" opacity=".12"/>').join('');
+        let furniture = '';
+        if (['master_bed','guest_room','nursery'].includes(room.id)) furniture = '<g filter="url(#shadow)"><rect x="'+(x+62)+'" y="'+(y+42)+'" width="126" height="92" rx="5" fill="#211a17" stroke="#0a0808" stroke-width="7"/><rect x="'+(x+66)+'" y="'+(y+38)+'" width="118" height="88" rx="4" fill="#655044" stroke="#b08b67" stroke-width="4"/><rect x="'+(x+72)+'" y="'+(y+45)+'" width="47" height="31" rx="4" fill="#c1b39b"/><rect x="'+(x+124)+'" y="'+(y+45)+'" width="52" height="31" rx="4" fill="#a9977f"/><path d="M'+(x+69)+' '+(y+84)+'h112" stroke="#2a211d" stroke-width="5"/></g>';
+        else if (['living_room','dining_room'].includes(room.id)) furniture = '<g filter="url(#shadow)"><rect x="'+(x+55)+'" y="'+(y+50)+'" width="140" height="73" rx="14" fill="#29201b" stroke="#090707" stroke-width="7"/><rect x="'+(x+60)+'" y="'+(y+45)+'" width="130" height="67" rx="12" fill="#76604c" stroke="#b49a79" stroke-width="4"/><path d="M'+(x+74)+' '+(y+56)+'h100M'+(x+74)+' '+(y+98)+'h100" stroke="#382b23" stroke-width="5"/></g>';
+        else if (['kitchen','laundry'].includes(room.id)) furniture = '<g filter="url(#shadow)"><rect x="'+(x+22)+'" y="'+(y+35)+'" width="202" height="31" fill="#77746d" stroke="#242322" stroke-width="5"/><path d="M'+(x+27)+' '+(y+51)+'h192" stroke="#d2c8b6" stroke-width="2" opacity=".45"/><rect x="'+(x+34)+'" y="'+(y+80)+'" width="62" height="53" rx="4" fill="#565b59" stroke="#171b1a" stroke-width="5"/><circle cx="'+(x+65)+'" cy="'+(y+106)+'" r="19" fill="#929894" stroke="#2a302e" stroke-width="5"/><rect x="'+(x+145)+'" y="'+(y+83)+'" width="65" height="48" fill="#8b8273" stroke="#292724" stroke-width="4"/></g>';
+        else if (room.id === 'bathroom') furniture = '<g filter="url(#shadow)"><rect x="'+(x+24)+'" y="'+(y+32)+'" width="86" height="93" rx="12" fill="#9da6a3" stroke="#303938" stroke-width="6"/><path d="M'+(x+34)+' '+(y+44)+'h66v67h-66z" fill="#657878" opacity=".55"/><ellipse cx="'+(x+170)+'" cy="'+(y+91)+'" rx="34" ry="27" fill="#b8c0bc" stroke="#333b3a" stroke-width="6"/><ellipse cx="'+(x+170)+'" cy="'+(y+91)+'" rx="18" ry="13" fill="#626f6d"/></g>';
+        else furniture = '<g filter="url(#shadow)"><rect x="'+(x+72)+'" y="'+(y+56)+'" width="106" height="58" rx="4" fill="#554536" stroke="#b0926d" stroke-width="5"/><path d="M'+(x+80)+' '+(y+84)+'h90" stroke="#c6a77e" stroke-width="3" opacity=".5"/></g>';
+        const windowMark = room.hasWindow ? '<g><rect x="'+(x+cellW*.38)+'" y="'+(y-7)+'" width="'+(cellW*.24)+'" height="13" fill="#8eabb2" stroke="#d1d9d5" stroke-width="3"/><path d="M'+(x+cellW*.5)+' '+(y-5)+'v10" stroke="#283b42" stroke-width="3"/></g>' : '';
+        const doorMark = '<g><rect x="'+(x+cellW*.43)+'" y="'+(y+cellH-10)+'" width="'+(cellW*.14)+'" height="17" fill="#5b3b28" stroke="#b28b60" stroke-width="3"/><circle cx="'+(x+cellW*.55)+'" cy="'+(y+cellH-3)+'" r="2.5" fill="#d4b47c"/></g>';
+        return '<g><rect x="'+(x+9)+'" y="'+(y+11)+'" width="'+cellW+'" height="'+cellH+'" fill="#000" opacity=".42"/><rect x="'+x+'" y="'+y+'" width="'+cellW+'" height="'+cellH+'" rx="2" fill="#11100f" stroke="#171310" stroke-width="16"/><rect x="'+(x+8)+'" y="'+(y+8)+'" width="'+(cellW-16)+'" height="'+(cellH-16)+'" fill="'+floor+'" stroke="'+palette.wall+'" stroke-width="5"/><rect x="'+(x+13)+'" y="'+(y+13)+'" width="'+(cellW-26)+'" height="'+(cellH-26)+'" fill="none" stroke="#17110d" stroke-width="2"/>'+planks+grain+furniture+windowMark+doorMark+'</g>';
       });
-      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '"><rect width="100%" height="100%" fill="' + palette.yard + '"/>' + links.join('') + roomShapes.join('') + '<rect x="2" y="2" width="' + (width-4) + '" height="' + (height-4) + '" fill="none" stroke="' + palette.wall + '" stroke-opacity=".35" stroke-width="4"/></svg>';
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '"><defs><filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><radialGradient id="vignette"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".58"/></radialGradient><pattern id="yardgrain" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M0 8h12M18 24h10M6 31h6" stroke="#9aa18a" stroke-opacity=".13" stroke-width="2"/></pattern></defs><rect width="100%" height="100%" fill="' + palette.yard + '"/><rect width="100%" height="100%" fill="url(#yardgrain)"/>' + links.join('') + roomShapes.join('') + '<rect width="100%" height="100%" fill="url(#vignette)"/><rect x="2" y="2" width="' + (width-4) + '" height="' + (height-4) + '" fill="none" stroke="' + palette.wall + '" stroke-opacity=".35" stroke-width="4"/></svg>';
       grid.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")';
       grid.style.backgroundSize = '100% 100%';
       grid.style.backgroundPosition = 'center';
@@ -2042,7 +2139,7 @@
       grid.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.45),0 18px 42px rgba(0,0,0,.45)';
       const adjIds = getAdjacentRooms(s.killerRoom);
       const losIds = getLineOfSightRooms(s, s.killerRoom);
-      const explored = new Set([...(s.exploredRooms || []), s.killerRoom, ...adjIds, ...losIds]);
+      const explored = new Set([...(s.exploredRooms || []), ...losIds]);
       const selectedCard = s.hand.find(c => c.uid === s.selectedCardUid);
       rooms.forEach(room => {
         const x = pad + room.col * (cellW + gapX), y = pad + room.row * (cellH + gapY);
@@ -2068,6 +2165,8 @@
           (isExplored && room.locked ? '<span class="house-state-tag locked">🔒 锁门</span>' : '') +
           (isExplored && room.dark ? '<span class="house-state-tag dark">黑暗</span>' : '') +
           (isExplored && room.horrificScene ? '<span class="house-state-tag danger">血迹</span>' : '') +
+          (isExplored && room.barricadedTurns > 0 ? '<span class="house-state-tag danger">障碍 ' + room.barricadedTurns + '</span>' : '') +
+          (isExplored && room.hidingSpotType ? '<span class="house-state-tag">藏身点</span>' : '') +
           (roomResidents.length ? '<span class="house-residents">' + roomResidents.map(r => '<i title="' + r.name + '">' + r.icon + '</i>').join('') + '</span>' : '') +
           (isKillerHere && hiddenCount ? '<span class="house-state-tag danger">藏匿者 ' + hiddenCount + '</span>' : '') +
           (!isExplored ? '<span class="house-state-tag dark">未探索</span>' : '');
@@ -2079,6 +2178,10 @@
       caption.className = 'house-map-caption';
       caption.textContent = s.mapSkin.toUpperCase() + ' · ' + (s.exploredRooms || []).length + '/' + rooms.length + ' ROOMS EXPLORED · WAR FOG';
       grid.appendChild(caption);
+      const visionNote = document.createElement('div');
+      visionNote.className = 'house-vision-note';
+      visionNote.textContent = '视野：当前房间 + 未被黑暗、锁门或障碍阻断的直接相邻房间；远处仅保留已探索记忆。';
+      grid.appendChild(visionNote);
     }
     function renderRoster() {
       const s = gameState;
