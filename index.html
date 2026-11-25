@@ -1460,14 +1460,10 @@
 
         // 受伤后的强制反应：本轮 NPC 阶段优先逃跑一次。
         if (r.healthState === 'injured' && r.reactionPending) {
-          const availableExits = exitRooms.filter(exit => !exit.locked);
-          let targetExit = null, bestDistance = Infinity;
-          availableExits.forEach(exit => {
-            const distance = Math.abs(gameState.rooms[r.roomId].row - exit.row) + Math.abs(gameState.rooms[r.roomId].col - exit.col);
-            if (distance < bestDistance) { bestDistance = distance; targetExit = exit; }
-          });
+          const exitChoice = findNearestReachableExit(r.roomId);
+          const targetExit = exitChoice ? exitChoice.exit : null;
           if (targetExit) {
-            const nextRoomId = pickStepTowardRoom(r.roomId, targetExit.id);
+            const nextRoomId = exitChoice.path[1] || null;
             if (nextRoomId && !gameState.rooms[nextRoomId].locked) {
               r.roomId = nextRoomId;
               logEvent(`🏃【${r.name}】受伤后立即逃跑至【${gameState.rooms[nextRoomId].name}】。`, 'alert');
@@ -1478,9 +1474,10 @@
         }
 
         // 恐慌 ≥ 2 的居民试图向最近出口逃跑
-        if (r.panic >= 2 || r.broken) {
-          const targetExit = exitRooms[0];
-          const nextRoomId = pickStepTowardRoom(r.roomId, targetExit.id);
+        if (r.panic >= 2 || r.broken || r.fleeing) {
+          const exitChoice = findNearestReachableExit(r.roomId);
+          const targetExit = exitChoice ? exitChoice.exit : null;
+          const nextRoomId = exitChoice ? (exitChoice.path[1] || null) : null;
           if (nextRoomId) {
             const nextRoom = gameState.rooms[nextRoomId];
             if (nextRoom.locked) {
@@ -1491,6 +1488,7 @@
               logEvent(`🔒 【${r.name}】惊慌逃向【${nextRoom.name}】却发现门被反锁，绝望之下直接【崩溃】！`, 'kill');
             } else {
               r.roomId = nextRoomId;
+              r.actedThisTurn = true;
               // 若到达出口且门未锁，尝试逃脱
               if (nextRoom.isExit && !nextRoom.locked) {
                 r.alive = false;
@@ -1500,6 +1498,53 @@
                 logEvent(`🏃 【${r.name}】从【${nextRoom.name}】逃出生天并报信！警方警戒 +2！`, 'alert');
               }
             }
+          }
+        } else if (!r.actedThisTurn) {
+          // 性格驱动的非紧急行动：不同 NPC 不再全部静止等待恐慌阈值。
+          const sameRoom = gameState.residents.filter(other => other.alive && other.id !== r.id && other.roomId === r.roomId);
+          const nearbyThreat = getAdjacentRooms(r.roomId).includes(gameState.killerRoom);
+          if (r.aiType === '警觉型' && nearbyThreat) {
+            inflictPanic(gameState, r, 1, '附近发现杀手');
+            r.actedThisTurn = true;
+            logEvent(`👁️【${r.name}】察觉附近危险，警觉性提高并开始寻找逃跑路线。`, 'alert');
+          } else if (r.aiType === '求救型' && !gameState.phoneCut && !nearbyThreat) {
+            const phoneRoom = Object.values(gameState.rooms).find(room => /living_room|study|hallway/.test(room.id) && room.id !== r.roomId && !room.locked);
+            if (phoneRoom) {
+              const step = pickStepTowardRoom(r.roomId, phoneRoom.id);
+              if (step) {
+                r.roomId = step;
+                r.actedThisTurn = true;
+                logEvent(`📞【${r.name}】正前往通讯设施寻求帮助。`, 'alert');
+              }
+            }
+          } else if (r.aiType === '救援型' && !nearbyThreat) {
+            const injuredAlly = gameState.residents.find(other => other.alive && other.id !== r.id && other.healthState !== 'healthy' && other.healthState !== 'dead');
+            if (injuredAlly && injuredAlly.roomId !== r.roomId) {
+              const step = pickStepTowardRoom(r.roomId, injuredAlly.roomId);
+              if (step) {
+                r.roomId = step;
+                r.actedThisTurn = true;
+                logEvent(`🤝【${r.name}】正在接近受伤的同伴，准备提供帮助。`, 'info');
+              }
+            }
+          } else if (r.aiType === '躲藏型' && (gameState.alert >= 3 || r.panic >= 1) && !nearbyThreat) {
+            const hidingRoom = Object.values(gameState.rooms).find(room => /bedroom|bathroom|storage|basement/.test(room.id) && room.id !== r.roomId && !room.locked);
+            if (hidingRoom) {
+              const step = pickStepTowardRoom(r.roomId, hidingRoom.id);
+              if (step) {
+                r.roomId = step;
+                r.actedThisTurn = true;
+                logEvent(`🚪【${r.name}】正在寻找隐蔽地点躲藏。`, 'info');
+              }
+            }
+          } else if (r.aiType === '英勇型' && nearbyThreat) {
+            inflictPanic(gameState, r, -1, '鼓舞');
+            r.actedThisTurn = true;
+            logEvent(`🛡️【${r.name}】没有逃跑，而是鼓起勇气准备保护同伴。`, 'alert');
+          } else if (r.aiType === '反抗型' && nearbyThreat) {
+            r.armed = true;
+            r.actedThisTurn = true;
+            logEvent(`⚠️【${r.name}】察觉杀手接近，开始准备临时反抗。`, 'warn');
           }
         }
       });
@@ -1579,22 +1624,43 @@
       renderAll();
     }
 
-    function pickStepTowardRoom(fromId, goalId) {
-      if (fromId === goalId) return null;
-      const adj = getAdjacentRooms(fromId);
-      if (adj.length === 0) return null;
-      const goal = gameState.rooms[goalId];
-      let best = adj[0];
-      let bestDist = Infinity;
-      adj.forEach(id => {
-        const r = gameState.rooms[id];
-        const dist = Math.abs(r.row - goal.row) + Math.abs(r.col - goal.col);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = id;
+    // 使用 BFS 寻找真实可通行路线，避免 NPC 因只看曼哈顿距离而撞墙或卡在锁门前。
+    function findRoomPath(fromId, goalId, options = {}) {
+      if (!gameState.rooms[fromId] || !gameState.rooms[goalId] || fromId === goalId) return [];
+      const allowLockedGoal = options.allowLockedGoal === true;
+      const queue = [[fromId]];
+      const visited = new Set([fromId]);
+      while (queue.length) {
+        const path = queue.shift();
+        const currentId = path[path.length - 1];
+        for (const nextId of getAdjacentRooms(currentId)) {
+          if (visited.has(nextId)) continue;
+          const room = gameState.rooms[nextId];
+          if (room.locked && !(allowLockedGoal && nextId === goalId)) continue;
+          const nextPath = [...path, nextId];
+          if (nextId === goalId) return nextPath;
+          visited.add(nextId);
+          queue.push(nextPath);
         }
-      });
-      return best;
+      }
+      return [];
+    }
+
+    function pickStepTowardRoom(fromId, goalId) {
+      const path = findRoomPath(fromId, goalId);
+      return path.length > 1 ? path[1] : null;
+    }
+
+    // 选择真正可达的最近出口；同距离时随机，避免所有居民机械地挤向第一个出口。
+    function findNearestReachableExit(fromId) {
+      const exits = Object.values(gameState.rooms).filter(room => room.isExit && !room.locked);
+      const candidates = exits.map(exit => ({ exit, path: findRoomPath(fromId, exit.id) }))
+        .filter(item => item.path.length > 0)
+        .sort((a, b) => a.path.length - b.path.length);
+      if (!candidates.length) return null;
+      const shortest = candidates[0].path.length;
+      const tied = candidates.filter(item => item.path.length === shortest);
+      return tied[Math.floor(Math.random() * tied.length)];
     }
 
     function checkEndConditions(state) {
