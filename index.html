@@ -1017,7 +1017,10 @@
       return shuffleArray(pool).slice(0, count).map((person, index) => ({
         id: 'r' + (index + 1), name: person.name, role: '普通居民', icon: person.icon,
         roomId: roomIds[Math.floor(Math.random() * roomIds.length)], panic: person.panic,
-        broken: false, alive: true, armed: false, specialScore: 0
+        broken: false, alive: true, armed: false, specialScore: 0,
+        healthState: 'healthy', damageCount: 0, fleeing: false, reactionPending: false,
+        lastDamagedTurn: 0, actedThisTurn: false, treatmentUses: 1,
+        aiType: ['警觉型', '求救型', '救援型', '躲藏型', '英勇型', '反抗型'][Math.floor(Math.random() * 6)]
       }));
     }
     function startNewGame() {
@@ -1141,8 +1144,43 @@
       return true;
     }
 
+    function damageResident(state, resident, methodText = '近身攻击') {
+      if (!resident || !resident.alive) return false;
+      if (!resident.healthState) resident.healthState = 'healthy';
+      if (resident.healthState === 'downed') {
+        executeResident(state, resident, methodText + '·击杀', 3, 1);
+        return true;
+      }
+      if (resident.healthState === 'healthy') {
+        resident.healthState = 'injured';
+        resident.damageCount = 1;
+        resident.panic = Math.min(3, (resident.panic || 0) + 1);
+        resident.broken = resident.panic >= 3;
+        resident.fleeing = true;
+        resident.reactionPending = true;
+        resident.lastDamagedTurn = state.turn;
+        logEvent(`🩸【${resident.name}】受伤，立即逃离杀手！`, 'kill');
+      } else {
+        resident.healthState = 'downed';
+        resident.damageCount = 2;
+        resident.fleeing = false;
+        resident.reactionPending = false;
+        resident.lastDamagedTurn = state.turn;
+        logEvent(`💀【${resident.name}】再次受伤并倒地！杀手可以直接击杀，但其他幸存者可能救援。`, 'kill');
+        triggerScreenFx('blood', true);
+      }
+      SoundEngine.slash();
+      renderAll();
+      return true;
+    }
+
     function executeResident(state, resident, methodText, basePoints = 3, evilGain = 1) {
       if (!resident || !resident.alive) return;
+      if (resident.healthState !== 'downed') {
+        damageResident(state, resident, methodText);
+        return;
+      }
+      resident.healthState = 'dead';
       resident.alive = false;
       state.kills += 1;
       state.killsThisTurn += 1;
@@ -1267,16 +1305,18 @@
         }
       }
 
-      // 2. 若点击的是当前所在房间，且房间内有【崩溃】居民，可花费 1 AP 发动基础刀击处决
+      // 2. 点击当前房间内的幸存者进行攻击；倒地者可直接击杀。
       if (roomId === gameState.killerRoom) {
-        const brokenTarget = gameState.residents.find(r => r.alive && r.roomId === roomId && r.broken);
-        if (brokenTarget) {
-          if (gameState.ap < 1) {
-            logEvent('需要 1 AP 才能对【崩溃】居民发动处决！', 'warn');
+        const target = gameState.residents.find(r => r.alive && r.roomId === roomId);
+        if (target) {
+          if (target.reactionPending && target.lastDamagedTurn === gameState.turn) {
+            logEvent(`【${target.name}】刚刚受伤，必须先获得逃跑反应！`, 'warn');
             return;
           }
+          if (gameState.ap < 1) { logEvent('需要 1 AP 才能发动近身攻击！', 'warn'); return; }
           gameState.ap -= 1;
-          executeResident(gameState, brokenTarget, '阴影近身处决', 3, 1);
+          if (target.healthState === 'downed') executeResident(gameState, target, '阴影近身击杀', 3, 1);
+          else damageResident(gameState, target, '阴影近身攻击');
           renderAll();
           return;
         }
@@ -1305,19 +1345,21 @@
         }
       }
 
-      // 同房间且目标已崩溃：直接 1 AP 处决
-      if (resident.roomId === gameState.killerRoom && resident.broken) {
-        if (gameState.ap < 1) {
-          logEvent('需要 1 AP 才能发动处决！', 'warn');
+      // 同房间目标：攻击推进生命状态，不能因恐慌或崩溃直接击杀。
+      if (resident.roomId === gameState.killerRoom) {
+        if (resident.reactionPending && resident.lastDamagedTurn === gameState.turn) {
+          logEvent(`【${resident.name}】刚刚受伤，必须先获得逃跑反应，不能连续攻击！`, 'warn');
           return;
         }
+        if (gameState.ap < 1) { logEvent('需要 1 AP 才能发动近身攻击！', 'warn'); return; }
         gameState.ap -= 1;
-        executeResident(gameState, resident, '近身处决', 3, 1);
+        if (resident.healthState === 'downed') executeResident(gameState, resident, '近身击杀', 3, 1);
+        else damageResident(gameState, resident, '迈尔斯近身攻击');
         renderAll();
         return;
       }
 
-      // 同房间但目标未崩溃（冷静/惊慌）：1 AP 逼迫/威慑（+1 恐慌；若目标在【前院/黑暗】且非武装，可造成恐慌）
+      // 不在同房间，则引导点击其所在房间
       if (resident.roomId === gameState.killerRoom) {
         if (gameState.ap < 1) {
           logEvent('需要 1 AP 才能威慑居民！', 'warn');
@@ -1374,8 +1416,28 @@
 
       // B. 居民与特殊威胁行动（逃跑 / 搜捕）
       const exitRooms = Object.values(gameState.rooms).filter(r => r.isExit);
+      gameState.residents.forEach(r => { r.actedThisTurn = false; });
       gameState.residents.forEach(r => {
-        if (!r.alive) return;
+        if (!r.alive || r.actedThisTurn) return;
+
+        // 同房间健康幸存者可治疗受伤者，或救援倒地者；杀手在场时不冒险。
+        if (r.healthState === 'healthy' && r.treatmentUses > 0 && r.roomId !== gameState.killerRoom) {
+          const patient = gameState.residents.find(other => other.alive && other.id !== r.id &&
+            other.roomId === r.roomId && (other.healthState === 'injured' || other.healthState === 'downed'));
+          if (patient) {
+            if (patient.healthState === 'injured') {
+              patient.healthState = 'healthy'; patient.damageCount = 0;
+              patient.fleeing = false; patient.reactionPending = false;
+              logEvent(`🩹【${r.name}】治疗了【${patient.name}】，对方恢复健康！`, 'info');
+            } else {
+              patient.healthState = 'injured'; patient.damageCount = 1;
+              patient.fleeing = true; patient.reactionPending = false;
+              logEvent(`🤝【${r.name}】救援了倒地的【${patient.name}】，对方恢复受伤状态！`, 'alert');
+            }
+            r.treatmentUses -= 1; r.actedThisTurn = true; patient.actedThisTurn = true;
+            return;
+          }
+        }
 
         // 持枪警察主动向迈尔斯所在房间搜捕
         if (r.role === '持枪警察') {
@@ -1387,6 +1449,25 @@
               logEvent(`🚓 【持枪警察】巡逻至【${gameState.rooms[r.roomId].name}】，警戒 +1！`, 'alert');
             }
           }
+          return;
+        }
+
+        // 受伤后的强制反应：本轮 NPC 阶段优先逃跑一次。
+        if (r.healthState === 'injured' && r.reactionPending) {
+          const availableExits = exitRooms.filter(exit => !exit.locked);
+          let targetExit = null, bestDistance = Infinity;
+          availableExits.forEach(exit => {
+            const distance = Math.abs(gameState.rooms[r.roomId].row - exit.row) + Math.abs(gameState.rooms[r.roomId].col - exit.col);
+            if (distance < bestDistance) { bestDistance = distance; targetExit = exit; }
+          });
+          if (targetExit) {
+            const nextRoomId = pickStepTowardRoom(r.roomId, targetExit.id);
+            if (nextRoomId && !gameState.rooms[nextRoomId].locked) {
+              r.roomId = nextRoomId;
+              logEvent(`🏃【${r.name}】受伤后立即逃跑至【${gameState.rooms[nextRoomId].name}】。`, 'alert');
+            }
+          }
+          r.reactionPending = false; r.fleeing = true; r.actedThisTurn = true;
           return;
         }
 
@@ -1694,7 +1775,7 @@
           `正在准备打出【${selectedCard.name}】(${selectedCard.cost} AP)：请点击地图上对应的房间或居民。`;
       } else {
         document.getElementById('actionPromptText').textContent =
-          '提示：点击相邻房间移动（1 AP）；对【崩溃】居民点击可直接处决（1 AP）；或选牌制造恐慌与封锁。';
+          '提示：点击相邻房间移动（1 AP）；同房间点击幸存者进行攻击；受伤者会立即逃跑，倒地者可直接击杀。';
       }
     }
 
@@ -1795,11 +1876,12 @@
 
       s.residents.forEach(r => {
         const roomName = s.rooms[r.roomId]?.name || '未知';
+        const healthLabel = r.healthState === 'downed'
+          ? '<span class="text-red-400 font-bold">【倒地】</span>'
+          : (r.healthState === 'injured' ? '<span class="text-orange-300 font-semibold">【受伤】</span>' : '<span class="text-emerald-300">【健康】</span>');
         const statusLabel = !r.alive
-          ? '<span class="text-zinc-500 line-through">已处决/离场</span>'
-          : (r.broken
-            ? '<span class="text-red-400 font-bold">【崩溃/待宰】</span>'
-            : (r.panic >= 2 ? '<span class="text-amber-300 font-semibold">【惊慌逃跑】</span>' : '<span class="text-zinc-300">【冷静】</span>'));
+          ? '<span class="text-zinc-500 line-through">已死亡/离场</span>'
+          : `${healthLabel}${r.fleeing ? '<span class="text-amber-300">【逃跑中】</span>' : ''}`;
 
         const row = document.createElement('div');
         row.className = `flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs ${
@@ -1814,7 +1896,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0 font-mono-num text-[11px]">
-            ${r.alive ? `<span class="text-amber-400">恐慌:${r.panic}</span>` : ''}
+            ${r.alive ? `<span class="text-amber-400">恐慌:${r.panic}</span><span class="text-zinc-400">${r.aiType || '普通居民'}</span>` : ''}
             ${statusLabel}
           </div>
         `;
