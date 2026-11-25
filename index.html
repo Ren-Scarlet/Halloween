@@ -263,10 +263,31 @@
     #mapGrid > div.house-map-caption { min-height:0 !important; padding:0 !important; background:none !important; border:0 !important; box-shadow:none !important; }
     .killer-card { min-height:205px !important;border-radius:4px !important;padding:0 !important; }
     .killer-card > div:first-child { padding:12px 13px 0; }
-    .killer-card .card-art { height:76px;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:relative;overflow:hidden;background:linear-gradient(115deg,rgba(61,29,34,.92),rgba(15,19,25,.96));border-bottom:1px solid rgba(188,153,111,.22); }
-    .killer-card .card-art:after { content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 12px,rgba(255,255,255,.025) 13px 14px); }
-    .killer-card .card-art strong { font:italic 42px Georgia,serif;color:rgba(224,204,179,.82);text-shadow:0 4px 15px #000; }
-    .killer-card .card-art small { z-index:1;color:rgba(218,207,193,.56);font:8px monospace;letter-spacing:.2em; }
+    /* DBD Wiki killer-perk card art.
+       Source assets supplied by the user:
+       https://dbdwiki.com/assets/perks/perk-killer@2x.webp
+       https://dbdwiki.com/assets/rarities/perk-very-rare.webp
+       The perk sheet is a 24-column x 7-row sprite atlas (last row partially filled).
+       Temporary assignment is reading order; perk names/effect mapping will be reconciled later. */
+    .killer-card .card-art {
+      height:88px;margin:0 0 10px;display:flex;align-items:center;justify-content:center;
+      position:relative;overflow:hidden;background:linear-gradient(180deg,#09070c,#100b16);
+      border-bottom:1px solid rgba(150,105,185,.35);
+    }
+    .killer-card .card-art:after { content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(155,75,190,.12),transparent 68%); }
+    .killer-card .perk-rarity-base {
+      position:absolute;width:78px;height:78px;left:50%;top:50%;transform:translate(-50%,-50%);
+      background-image:url("https://dbdwiki.com/assets/rarities/perk-very-rare.webp");
+      background-size:contain;background-position:center;background-repeat:no-repeat;
+      filter:drop-shadow(0 3px 7px rgba(0,0,0,.75));
+    }
+    .killer-card .perk-sprite-icon {
+      position:relative;z-index:1;width:58px;height:58px;flex:0 0 58px;
+      background-image:url("https://dbdwiki.com/assets/perks/perk-killer@2x.webp");
+      background-size:2400% 700%;background-repeat:no-repeat;
+      image-rendering:auto;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8));
+    }
+    .killer-card .card-art-label { position:absolute;right:7px;bottom:5px;z-index:2;color:rgba(232,218,244,.42);font:7px monospace;letter-spacing:.12em; }
     .killer-card > div:last-child { margin:10px 13px 12px !important;padding-top:9px !important; }
     #appShell > main > section,#appShell > main > aside > div,#appShell > section:last-of-type { border-radius:5px !important; }
     @media(max-width:700px) { .killer-hero { min-height:230px;padding:25px 20px; }.killer-hero-portrait { right:-3%;width:52%;opacity:.72; }.hero-bottomline { left:20px;right:20px; }.hero-title { max-width:65%;font-size:29px; } }
@@ -2308,10 +2329,14 @@
           selectCard(card.uid);
         };
 
-        const artSymbol = card.type.includes("环境") ? "⚡" : (card.type.includes("凝视") ? "◉" : (card.type.includes("移动") ? "↗" : (card.type.includes("攻击") || card.type.includes("处决") ? "†" : "✦")));
+        const spriteIndex = Number.isInteger(card.perkSpriteIndex) ? card.perkSpriteIndex : (s.hand.indexOf(card) % 168);
+        const spriteCol = spriteIndex % 24;
+        const spriteRow = Math.floor(spriteIndex / 24);
+        const spriteX = (spriteCol / 23) * 100;
+        const spriteY = (spriteRow / 6) * 100;
         el.innerHTML = `
           <div>
-            <button class="killer-card-info" type="button" onclick="event.stopPropagation();openKillerInfo(&quot;${card.uid}&quot;)">详情</button><div class="card-art"><strong>${artSymbol}</strong><small>THE SHAPE · FIELD RECORD</small></div>
+            <button class="killer-card-info" type="button" onclick="event.stopPropagation();openKillerInfo(&quot;${card.uid}&quot;)">详情</button><div class="card-art"><span class="perk-rarity-base" aria-hidden="true"></span><span class="perk-sprite-icon" style="background-position:${spriteX}% ${spriteY}%" aria-label="杀手技能图标"></span><span class="card-art-label">VERY RARE</span></div>
             <div class="flex items-center justify-between gap-1.5 mb-1.5">
               <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${card.badgeColor}">${card.type}</span>
               <span class="font-mono-num text-xs font-bold px-2 py-0.5 rounded-md bg-amber-950/90 text-amber-300 border border-amber-700/60">
